@@ -1,0 +1,18 @@
+{
+  "name": "life-coach",
+  "version": "1.0.0",
+  "description": "这是一个基于火山方舟 DeepSeek R1 API 开发的个人成长辅导网站。通过与 AI 助手的对话，用户可以获得个性化的建议和指导，帮助个人成长。",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "node-fetch": "^3.3.2"
+  }
+}

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Coach AI 助手</title>
+    <!-- 页面样式 -->
+    <style>
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* 页面基础样式 */
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        /* 页面布局 */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 页面头部 */
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            color: #2c3e50;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        /* 聊天区域 */
+        .chat-container {
+            flex: 1;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 消息列表 */
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* 消息气泡 */
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin: 0 12px;
+        }
+
+        .user .message-content {
+            background: #007AFF;
+            color: #fff;
+        }
+
+        .assistant .message-content {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        /* 输入区域 */
+        .input-container {
+            padding: 20px;
+            background: #fff;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-container textarea {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: none;
+            height: 50px;
+            font-family: inherit;
+        }
+
+        .input-container button {
+            padding: 0 20px;
+            background: #007AFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .input-container button:hover {
+            background: #0056b3;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            header h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 页面头部 -->
+        <header>
+            <h1>Life Coach AI 助手</h1>
+            <p>你的个人成长伙伴</p>
+        </header>
+
+        <!-- 聊天区域 -->
+        <div class="chat-container">
+            <!-- 消息列表 -->
+            <div class="messages" id="messages">
+                <!-- AI 欢迎消息 -->
+                <div class="message assistant">
+                    <div class="message-content">
+                        你好！我是你的 Life Coach AI 助手。我会通过与你的对话，为你提供个性化的建议和指导，帮助你实现个人成长。让我们开始吧！
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="input-container">
+                <textarea id="userInput" placeholder="输入你的问题或想法..."></textarea>
+                <button id="sendButton">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页面脚本 -->
+    <script>
+        // 获取DOM元素
+        const messagesContainer = document.getElementById('messages');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+
+        // 发送消息函数
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // 添加用户消息到界面
+            addMessage(message, 'user');
+            userInput.value = '';
+
+            try {
+                // 发送请求到后端
+                const response = await fetch('http://localhost:3000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                if (!response.ok) throw new Error('请求失败');
+
+                // 处理流式响应
+                const reader = response.body.getReader();
+                let aiMessage = '';
+                const messageElement = addMessage('', 'assistant');
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    // 将二进制数据转换为文本
+                    const text = new TextDecoder().decode(value);
+                    aiMessage += text;
+                    messageElement.textContent = aiMessage;
+                    messageElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('抱歉，发生了错误，请稍后重试。', 'assistant');
+            }
+        }
+
+        // 添加消息到界面
+        function addMessage(text, role) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = text;
+
+            messageDiv.appendChild(contentDiv);
+            messagesContainer.appendChild(messageDiv);
+            messageDiv.scrollIntoView({ behavior: 'smooth' });
+
+            return contentDiv;
+        }
+
+        // 事件监听
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
