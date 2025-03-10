@@ -260,54 +260,48 @@
 
             try {
                 // 发送请求到后端
-                const response = await fetch('http://localhost:3000/chat', {
+                const response = await fetch('http://localhost:3000/api/chat', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ message })
                 });
 
-                if (!response.ok) throw new Error('请求失败');
+                const data = await response.json();
 
-                // 处理流式响应
-                const reader = response.body.getReader();
-                let aiMessage = '';
-                const messageElement = addMessage('', 'assistant');
+                // 分段显示AI回复
+                await addMessage(data.emotional, 'assistant');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                await addMessage(data.transition, 'assistant');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                await addMessage(data.cognitive, 'assistant');
 
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    // 将二进制数据转换为文本
-                    const text = new TextDecoder().decode(value);
-                    aiMessage += text;
-                    messageElement.textContent = aiMessage;
-                    messageElement.scrollIntoView({ behavior: 'smooth' });
-                }
             } catch (error) {
                 console.error('Error:', error);
                 addMessage('抱歉，发生了错误，请稍后重试。', 'assistant');
             }
         }
 
-        // 添加消息到界面
-        function addMessage(text, role) {
+        // 添加消息到界面的函数
+        async function addMessage(content, type) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${role}`;
-
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-            contentDiv.textContent = text;
-
-            messageDiv.appendChild(contentDiv);
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = `<div class="message-content"></div>`;
             messagesContainer.appendChild(messageDiv);
-            messageDiv.scrollIntoView({ behavior: 'smooth' });
 
-            return contentDiv;
+            const contentDiv = messageDiv.querySelector('.message-content');
+            // 实现打字机效果
+            for (let char of content) {
+                contentDiv.textContent += char;
+                await new Promise(resolve => setTimeout(resolve, 30));
+            }
+
+            // 滚动到最新消息
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        // 事件监听
+        // 事件监听器
         sendButton.addEventListener('click', sendMessage);
         userInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
