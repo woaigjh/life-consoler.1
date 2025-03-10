@@ -291,11 +291,9 @@
             messagesContainer.appendChild(messageDiv);
 
             const contentDiv = messageDiv.querySelector('.message-content');
-            // 实现打字机效果
-            for (let char of content) {
-                contentDiv.textContent += char;
-                await new Promise(resolve => setTimeout(resolve, 30));
-            }
+            // 使用marked.js解析Markdown并实现打字机效果
+            const parsedContent = marked.parse(content);
+            contentDiv.innerHTML = parsedContent;
 
             // 滚动到最新消息
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -310,5 +308,10 @@
             }
         });
     </script>
+</body>
+</html>
+</script>
+    <!-- 引入Marked.js -->
+    <script src="node_modules/marked/marked.min.js"></script>
 </body>
 </html>
