@@ -167,6 +167,51 @@
             background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
         }
 
+        /* 思考中的动画效果 */
+        .thinking .message-content {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: #fff;
+            animation: thinking 2s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(50, 50, 93, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .thinking .message-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes thinking {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+                box-shadow: 0 4px 15px rgba(50, 50, 93, 0.15);
+            }
+            50% {
+                transform: scale(1.02);
+                opacity: 1;
+                box-shadow: 0 8px 20px rgba(50, 50, 93, 0.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+                box-shadow: 0 4px 15px rgba(50, 50, 93, 0.15);
+            }
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
         /* 动画效果 */
         @keyframes fadeInUp {
             from {
@@ -258,6 +303,18 @@
             addMessage(message, 'user');
             userInput.value = '';
 
+            // 添加思考中的提示
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'message assistant thinking';
+            thinkingDiv.innerHTML = '<div class="message-content">凡事发生皆有利于我</div>';
+            messagesContainer.appendChild(thinkingDiv);
+            thinkingDiv.style.opacity = '0';
+            setTimeout(() => {
+                thinkingDiv.style.opacity = '1';
+                thinkingDiv.style.transition = 'all 0.5s ease-in-out';
+            }, 100);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
             try {
                 // 发送请求到后端
                 const response = await fetch('http://localhost:3000/api/chat', {
@@ -269,6 +326,9 @@
                 });
 
                 const data = await response.json();
+
+                // 移除思考中的提示
+                messagesContainer.removeChild(thinkingDiv);
 
                 // 分段显示AI回复
                 await addMessage(data.emotional, 'assistant');
@@ -283,20 +343,53 @@
             }
         }
 
+        // 添加消息到界面的函数，支持打字机效果
+        function typeWriter(element, text, index = 0, callback) {
+            if (index < text.length) {
+                element.textContent += text.charAt(index);
+                setTimeout(() => typeWriter(element, text, index + 1, callback), 30);
+            } else if (callback) {
+                callback();
+            }
+        }
+
         // 添加消息到界面的函数
         async function addMessage(content, type) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}`;
             messageDiv.innerHTML = `<div class="message-content"></div>`;
+            messageDiv.style.opacity = '0';
             messagesContainer.appendChild(messageDiv);
 
             const contentDiv = messageDiv.querySelector('.message-content');
-            // 使用marked.js解析Markdown并实现打字机效果
-            const parsedContent = marked.parse(content);
-            contentDiv.innerHTML = parsedContent;
+            
+            // 如果是AI回复，使用打字机效果
+            if (type === 'assistant') {
+                contentDiv.textContent = '';
+                setTimeout(() => {
+                    messageDiv.style.opacity = '1';
+                    messageDiv.style.transition = 'opacity 0.5s ease-in-out';
+                    typeWriter(contentDiv, content, 0, () => {
+                        // 打字机效果完成后渲染Markdown
+                        contentDiv.innerHTML = marked.parse(contentDiv.textContent);
+                    });
+                }, 1000);
+            } else {
+                contentDiv.innerHTML = marked.parse(content);
+                messageDiv.style.opacity = '1';
+            }
 
             // 滚动到最新消息
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // 返回一个Promise以支持分段显示
+            return new Promise(resolve => {
+                if (type === 'assistant') {
+                    setTimeout(resolve, content.length * 30 + 1000);
+                } else {
+                    resolve();
+                }
+            });
         }
 
         // 事件监听器
@@ -308,10 +401,6 @@
             }
         });
     </script>
-</body>
-</html>
-</script>
-    <!-- 引入Marked.js -->
-    <script src="node_modules/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </body>
 </html>
