@@ -17,15 +17,16 @@
         body {
             font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
             line-height: 1.6;
-            background-color: #f5f5f5;
-            color: #333;
+            background: linear-gradient(135deg, #f6f9fc 0%, #edf1f7 100%);
+            color: #2c3e50;
+            min-height: 100vh;
         }
 
         /* 页面布局 */
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 40px 20px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -34,39 +35,58 @@
         /* 页面头部 */
         header {
             text-align: center;
-            padding: 20px 0;
-            margin-bottom: 20px;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.8s ease-out;
         }
 
         header h1 {
-            color: #2c3e50;
-            font-size: 2em;
-            margin-bottom: 10px;
+            color: #1a365d;
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            letter-spacing: -0.5px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        header p {
+            color: #4a5568;
+            font-size: 1.2em;
+            opacity: 0.9;
         }
 
         /* 聊天区域 */
         .chat-container {
             flex: 1;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .chat-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
         }
 
         /* 消息列表 */
         .messages {
             flex: 1;
-            padding: 20px;
+            padding: 30px;
             overflow-y: auto;
+            scroll-behavior: smooth;
         }
 
         /* 消息气泡 */
         .message {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             display: flex;
             align-items: flex-start;
+            animation: fadeInUp 0.5s ease-out;
         }
 
         .message.user {
@@ -75,58 +95,105 @@
 
         .message-content {
             max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin: 0 12px;
+            padding: 15px 20px;
+            border-radius: 18px;
+            margin: 0 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+        }
+
+        .message-content:hover {
+            transform: scale(1.02);
         }
 
         .user .message-content {
-            background: #007AFF;
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
             color: #fff;
+            border-bottom-right-radius: 5px;
         }
 
         .assistant .message-content {
-            background: #f0f0f0;
-            color: #333;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            color: #2d3748;
+            border-bottom-left-radius: 5px;
         }
 
         /* 输入区域 */
         .input-container {
-            padding: 20px;
-            background: #fff;
-            border-top: 1px solid #eee;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.9);
+            border-top: 1px solid rgba(226, 232, 240, 0.8);
             display: flex;
-            gap: 10px;
+            gap: 15px;
+            align-items: center;
         }
 
         .input-container textarea {
             flex: 1;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
             resize: none;
-            height: 50px;
+            height: 60px;
             font-family: inherit;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .input-container textarea:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
         }
 
         .input-container button {
-            padding: 0 20px;
-            background: #007AFF;
+            padding: 0 25px;
+            height: 45px;
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
             color: #fff;
             border: none;
-            border-radius: 5px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: background 0.3s;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11);
         }
 
         .input-container button:hover {
-            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+            background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+        }
+
+        /* 动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* 响应式设计 */
         @media (max-width: 600px) {
             .container {
-                padding: 10px;
+                padding: 20px 10px;
             }
 
             .message-content {
@@ -134,7 +201,15 @@
             }
 
             header h1 {
-                font-size: 1.5em;
+                font-size: 2em;
+            }
+
+            .input-container {
+                padding: 15px;
+            }
+
+            .input-container textarea {
+                height: 50px;
             }
         }
     </style>
