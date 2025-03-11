@@ -263,8 +263,8 @@
     <div class="container">
         <!-- 页面头部 -->
         <header>
-            <h1>Life Coach AI 助手</h1>
-            <p>你的个人成长伙伴</p>
+            <h1>解忧杂货店</h1>
+            <p>倾听烦恼，温暖你心</p>
         </header>
 
         <!-- 聊天区域 -->
@@ -274,7 +274,11 @@
                 <!-- AI 欢迎消息 -->
                 <div class="message assistant">
                     <div class="message-content">
-                        你好！我是你的 Life Coach AI 助手。我会通过与你的对话，为你提供个性化的建议和指导，帮助你实现个人成长。让我们开始吧！
+                        🌙 深夜的杂货店亮着灯<br>
+                        你好，这里是浪矢爷爷的"解忧信箱"。<br>
+                        你可以写下任何心事——关于生活、选择、遗憾，或是某个难以启齿的秘密。<br>
+                        请相信："你的地图是白纸，所以一切皆有可能。"<br>
+                        我们会像对待30年前的信件一样，认真回复你的每一个字。
                     </div>
                 </div>
             </div>
@@ -345,9 +349,11 @@
 
         // 添加消息到界面的函数，支持打字机效果
         function typeWriter(element, text, index = 0, callback) {
+            const chunkSize = 3; // 每次添加多个字符
             if (index < text.length) {
-                element.textContent += text.charAt(index);
-                setTimeout(() => typeWriter(element, text, index + 1, callback), 30);
+                const chunk = text.substr(index, chunkSize);
+                element.textContent += chunk;
+                requestAnimationFrame(() => typeWriter(element, text, index + chunkSize, callback));
             } else if (callback) {
                 callback();
             }
@@ -366,26 +372,26 @@
             // 如果是AI回复，使用打字机效果
             if (type === 'assistant') {
                 contentDiv.textContent = '';
-                setTimeout(() => {
-                    messageDiv.style.opacity = '1';
-                    messageDiv.style.transition = 'opacity 0.5s ease-in-out';
-                    typeWriter(contentDiv, content, 0, () => {
-                        // 打字机效果完成后渲染Markdown
-                        contentDiv.innerHTML = marked.parse(contentDiv.textContent);
-                    });
-                }, 1000);
+                messageDiv.style.opacity = '1';
+                messageDiv.style.transition = 'opacity 0.3s ease-in-out';
+                typeWriter(contentDiv, content, 0, () => {
+                    // 打字机效果完成后渲染Markdown
+                    contentDiv.innerHTML = marked.parse(contentDiv.textContent);
+                });
             } else {
                 contentDiv.innerHTML = marked.parse(content);
                 messageDiv.style.opacity = '1';
             }
 
             // 滚动到最新消息
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            setTimeout(() => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 100);
 
             // 返回一个Promise以支持分段显示
             return new Promise(resolve => {
                 if (type === 'assistant') {
-                    setTimeout(resolve, content.length * 30 + 1000);
+                    setTimeout(resolve, content.length * 10 + 500);
                 } else {
                     resolve();
                 }

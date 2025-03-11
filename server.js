@@ -21,14 +21,17 @@ const API_AUTH = {
 
 // 处理用户消息的函数
 async function processUserMessage(message) {
-    // 第一段：情绪分析和灵性回应
-    const emotionalResponse = await generateResponse(message, '请对用户的消息进行情绪分析，给出富有同理心和灵性的回应。');
-    
-    // 第二段：温和过渡
-    const transitionResponse = await generateResponse(message, '你的心情好了一些吗？together分析一下这件事情。');
-    
-    // 第三段：认知分析
-    const cognitiveResponse = await generateResponse(message, '请对用户的情况进行深入的认知分析，提供清晰的建议。');
+    // 并发请求所有回应
+    const [emotionalResponse, transitionResponse, cognitiveResponse] = await Promise.all([
+        // 第一段：情绪分析和灵性回应
+        generateResponse(message, '请对用户的消息进行情绪分析，给出富有同理心和灵性的回应，孩童般那无理但有情，打动人心，让用户感到温暖与被理解，使用户重拾勇气与信心。注意回复不要太长，选择最能打动人心的一两句话回复，不要有心理活动或者场景的描述。'),
+        
+        // 第二段：事件分析
+        Promise.resolve('你现在心情好了一些吗，让我们一起来看看这件事情吧。'),
+        
+        // 第三段：行动建议
+        generateResponse(message, '请对整个事件从不同角度进行分析，让用户全面深刻地认识到这件事情，并且给用户一些具体可实施的方法，让用户能够开始着手改变。注意语气自然，就像两个人在促膝长谈一样，一步一步地引导，多鼓励，不要有心理活动或者场景的描述。')
+    ]);
     
     return {
         emotional: emotionalResponse,
