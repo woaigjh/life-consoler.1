@@ -334,12 +334,23 @@
                 // 移除思考中的提示
                 messagesContainer.removeChild(thinkingDiv);
 
+                // 检查错误
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
                 // 分段显示AI回复
-                await addMessage(data.emotional, 'assistant');
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                await addMessage(data.transition, 'assistant');
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                await addMessage(data.cognitive, 'assistant');
+                if (data.emotional) {
+                    await addMessage(data.emotional, 'assistant');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                if (data.transition) {
+                    await addMessage(data.transition, 'assistant');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                if (data.cognitive) {
+                    await addMessage(data.cognitive, 'assistant');
+                }
 
             } catch (error) {
                 console.error('Error:', error);

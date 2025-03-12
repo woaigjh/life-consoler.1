@@ -11,10 +11,10 @@ const app = express();
 
 // 配置CORS
 app.use(cors({
-    origin: true,
-    credentials: true,
+    origin: '*',
     methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 200
 }));
 
 app.use(express.json());
