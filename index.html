@@ -329,7 +329,12 @@
                     body: JSON.stringify({ message })
                 });
 
+                if (!response.ok) {
+                    throw new Error(`服务器响应错误: ${response.status}`);
+                }
+
                 const data = await response.json();
+                console.log('API Response:', data); // 添加日志
 
                 // 移除思考中的提示
                 messagesContainer.removeChild(thinkingDiv);
@@ -337,6 +342,11 @@
                 // 检查错误
                 if (data.error) {
                     throw new Error(data.error);
+                }
+
+                // 验证响应数据结构
+                if (!data || typeof data !== 'object') {
+                    throw new Error('服务器返回的数据格式不正确');
                 }
 
                 // 分段显示AI回复
