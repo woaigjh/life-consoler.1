@@ -10,10 +10,5 @@
   "routes": [
     { "src": "/api/(.*)", "dest": "server.js" },
     { "src": "/(.*)", "dest": "index.html" }
-  ],
-  "env": {
-    "VOLCES_API_KEY": "@volces_api_key",
-    "VOLCES_API_URL": "@volces_api_url",
-    "VOLCES_API_MODEL": "@volces_api_model"
-  }
+  ]
 }

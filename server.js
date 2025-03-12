@@ -30,8 +30,13 @@ const API_MODEL = process.env.VOLCES_API_MODEL || 'deepseek-r1-250120';
 // 配置API认证信息
 const API_AUTH = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${API_KEY}`
+    'Authorization': `Bearer ${API_KEY}`,
+    'Accept': 'application/json'
 };
+
+// 添加请求超时和重试机制
+const MAX_RETRIES = 3;
+const TIMEOUT = 30000; // 30秒超时
 
 // 处理用户消息的函数
 async function processUserMessage(message) {
@@ -56,42 +61,58 @@ async function processUserMessage(message) {
 
 // 生成AI回复的函数
 async function generateResponse(message, instruction) {
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: API_AUTH,
-            body: JSON.stringify({
-                model: API_MODEL,
-                messages: [
-                    {
-                        role: 'system',
-                        content: instruction
-                    },
-                    {
-                        role: 'user',
-                        content: message
-                    }
-                ]
-            })
-        });
+    let retries = 0;
+    while (retries < MAX_RETRIES) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
 
-        if (!response.ok) {
-            throw new Error(`API request failed with status ${response.status}`);
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: API_AUTH,
+                signal: controller.signal,
+                body: JSON.stringify({
+                    model: API_MODEL,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: instruction
+                        },
+                        {
+                            role: 'user',
+                            content: message
+                        }
+                    ]
+                })
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`API request failed with status ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('API Response:', JSON.stringify(data, null, 2));
+
+            if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
+                console.error('Invalid API response structure:', data);
+                throw new Error('Invalid API response structure');
+            }
+
+            return data.choices[0].message.content;
+
+        } catch (error) {
+            console.error(`Error generating response (attempt ${retries + 1}/${MAX_RETRIES}):`, error);
+            retries++;
+            if (retries === MAX_RETRIES) {
+                return '抱歉，生成回复时出现错误，请稍后再试。';
+            }
+            // 等待一段时间后重试
+            await new Promise(resolve => setTimeout(resolve, 1000 * retries));
         }
-
-        const data = await response.json();
-        console.log('API Response:', JSON.stringify(data, null, 2));
-
-        if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
-            console.error('Invalid API response structure:', data);
-            return '抱歉，API返回的数据格式不正确。';
-        }
-
-        return data.choices[0].message.content;
-    } catch (error) {
-        console.error('Error generating response:', error);
-        return '抱歉，生成回复时出现错误。';
     }
+    return '抱歉，服务暂时不可用，请稍后再试。'
 }
 
 // API路由
@@ -101,22 +122,15 @@ app.post('/api/chat', async (req, res) => {
         if (!message) {
             return res.status(400).json({ error: '消息不能为空' });
         }
-
         const response = await processUserMessage(message);
         res.json(response);
     } catch (error) {
-        console.error('Error processing message:', error);
-        res.status(500).json({ error: '处理消息时出错' });
+        console.error('Error in chat endpoint:', error);
+        res.status(500).json({ error: '服务器内部错误' });
     }
 });
 
-// 添加通配符路由处理
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// 启动服务器
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
