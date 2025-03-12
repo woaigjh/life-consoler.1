@@ -36,7 +36,8 @@ const API_AUTH = {
 
 // 添加请求超时和重试机制
 const MAX_RETRIES = 3;
-const TIMEOUT = 30000; // 30秒超时
+const TIMEOUT = 60000; // 60秒超时
+const RETRY_DELAY = 2000; // 重试延迟2秒
 
 // 处理用户消息的函数
 async function processUserMessage(message) {
@@ -124,7 +125,9 @@ async function generateResponse(message, instruction) {
                 return '抱歉，生成回复时出现错误，请稍后再试。';
             }
             // 等待一段时间后重试
-            await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+            const delay = RETRY_DELAY * Math.pow(2, retries - 1); // 指数退避策略
+            console.log(`Waiting ${delay}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
     return '抱歉，服务暂时不可用，请稍后再试。'
