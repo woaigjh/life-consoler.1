@@ -137,11 +137,23 @@ app.post('/api/chat', async (req, res) => {
         body: req.body
     });
 
+    // 处理OPTIONS请求
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     try {
         const { message } = req.body;
         if (!message) {
             return res.status(400).json({ error: '消息不能为空' });
         }
+
+        // 设置响应头
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+        res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+
         const response = await processUserMessage(message);
         res.json(response);
     } catch (error) {
@@ -149,7 +161,7 @@ app.post('/api/chat', async (req, res) => {
             error: error.message,
             stack: error.stack
         });
-        res.status(500).json({ error: '服务器内部错误' });
+        res.status(500).json({ error: '服务器内部错误，请稍后重试' });
     }
 });
 
