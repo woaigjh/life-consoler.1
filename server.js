@@ -101,15 +101,22 @@ app.post('/api/chat', async (req, res) => {
         if (!message) {
             return res.status(400).json({ error: '消息不能为空' });
         }
+
         const response = await processUserMessage(message);
         res.json(response);
     } catch (error) {
-        console.error('Error in chat endpoint:', error);
-        res.status(500).json({ error: '服务器内部错误' });
+        console.error('Error processing message:', error);
+        res.status(500).json({ error: '处理消息时出错' });
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+// 添加通配符路由处理
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// 启动服务器
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });
