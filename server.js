@@ -8,7 +8,15 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// 配置CORS
+app.use(cors({
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
 // 添加静态文件服务中间件
@@ -67,8 +75,12 @@ async function generateResponse(message, instruction) {
             })
         });
 
+        if (!response.ok) {
+            throw new Error(`API request failed with status ${response.status}`);
+        }
+
         const data = await response.json();
-        console.log('API Response:', JSON.stringify(data, null, 2)); // 添加完整的日志记录
+        console.log('API Response:', JSON.stringify(data, null, 2));
 
         if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
             console.error('Invalid API response structure:', data);
@@ -86,6 +98,9 @@ async function generateResponse(message, instruction) {
 app.post('/api/chat', async (req, res) => {
     try {
         const { message } = req.body;
+        if (!message) {
+            return res.status(400).json({ error: '消息不能为空' });
+        }
         const response = await processUserMessage(message);
         res.json(response);
     } catch (error) {
