@@ -67,6 +67,12 @@ async function generateResponse(message, instruction) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
 
+            console.log('Sending request to API:', {
+                url: API_URL,
+                model: API_MODEL,
+                message: message.substring(0, 100) + '...' // 只记录消息的前100个字符
+            });
+
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: API_AUTH,
@@ -89,7 +95,13 @@ async function generateResponse(message, instruction) {
             clearTimeout(timeoutId);
 
             if (!response.ok) {
-                throw new Error(`API request failed with status ${response.status}`);
+                const errorText = await response.text();
+                console.error('API Response Error:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    errorText: errorText
+                });
+                throw new Error(`API request failed with status ${response.status}: ${errorText}`);
             }
 
             const data = await response.json();
@@ -103,7 +115,10 @@ async function generateResponse(message, instruction) {
             return data.choices[0].message.content;
 
         } catch (error) {
-            console.error(`Error generating response (attempt ${retries + 1}/${MAX_RETRIES}):`, error);
+            console.error(`Error generating response (attempt ${retries + 1}/${MAX_RETRIES}):`, {
+                error: error.message,
+                stack: error.stack
+            });
             retries++;
             if (retries === MAX_RETRIES) {
                 return '抱歉，生成回复时出现错误，请稍后再试。';
@@ -117,6 +132,11 @@ async function generateResponse(message, instruction) {
 
 // API路由
 app.post('/api/chat', async (req, res) => {
+    console.log('Received chat request:', {
+        headers: req.headers,
+        body: req.body
+    });
+
     try {
         const { message } = req.body;
         if (!message) {
@@ -125,7 +145,10 @@ app.post('/api/chat', async (req, res) => {
         const response = await processUserMessage(message);
         res.json(response);
     } catch (error) {
-        console.error('Error in chat endpoint:', error);
+        console.error('Error in chat endpoint:', {
+            error: error.message,
+            stack: error.stack
+        });
         res.status(500).json({ error: '服务器内部错误' });
     }
 });
@@ -133,4 +156,9 @@ app.post('/api/chat', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+    console.log('Environment:', {
+        NODE_ENV: process.env.NODE_ENV,
+        API_URL: API_URL,
+        API_MODEL: API_MODEL
+    });
 });
