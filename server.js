@@ -36,29 +36,8 @@ const API_AUTH = {
 
 // 添加请求超时和重试机制
 const MAX_RETRIES = 3;
-const TIMEOUT = 60000; // 60秒超时
-const RETRY_DELAY = 2000; // 重试延迟2秒
-
-// 处理用户消息的函数
-async function processUserMessage(message) {
-    // 并发请求所有回应
-    const [emotionalResponse, transitionResponse, cognitiveResponse] = await Promise.all([
-        // 第一段：情绪分析和灵性回应
-        generateResponse(message, '请对用户的消息进行情绪分析，就事论事，给出富有同理心和灵性的回应，孩童般那无理但有情，打动人心，让用户感到温暖与被理解，使用户重拾勇气与信心。注意回复不要太长，选择最能打动人心的一两句话回复，不要有心理活动或者场景的描述。'),
-        
-        // 第二段：事件分析
-        Promise.resolve('你现在心情好了一些吗，让我们一起来看看这件事情吧。'),
-        
-        // 第三段：行动建议
-        generateResponse(message, '请对整个事件从不同角度进行分析，让用户全面深刻地认识到这件事情，并且给用户一些具体可实施的方法，让用户能够开始着手改变。注意语气自然，就像两个人在促膝长谈一样，一步一步地引导，多鼓励，不要有心理活动或者场景的描述。')
-    ]);
-    
-    return {
-        emotional: emotionalResponse,
-        transition: transitionResponse,
-        cognitive: cognitiveResponse
-    };
-}
+const TIMEOUT = 30000; // 降低到30秒超时
+const RETRY_DELAY = 1000; // 降低到1秒重试延迟
 
 // 生成AI回复的函数
 async function generateResponse(message, instruction) {
@@ -133,7 +112,7 @@ async function generateResponse(message, instruction) {
     return '抱歉，服务暂时不可用，请稍后再试。'
 }
 
-// API路由
+// API路由 - 改为流式响应
 app.post('/api/chat', async (req, res) => {
     console.log('Received chat request:', {
         headers: req.headers,
@@ -158,12 +137,26 @@ app.post('/api/chat', async (req, res) => {
 
         // 设置响应头
         res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-        res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
-
-        const response = await processUserMessage(message);
-        res.json(response);
+        
+        // 先返回情感回应，避免超时
+        const emotionalResponse = await generateResponse(message, '请对用户的消息进行情绪分析，就事论事，给出富有同理心和灵性的回应，孩童般那无理但有情，打动人心，让用户感到温暖与被理解，使用户重拾勇气与信心。注意回复不要太长，选择最能打动人心的一两句话回复，不要有心理活动或者场景的描述。');
+        
+        // 发送第一部分响应
+        res.json({
+            emotional: emotionalResponse,
+            transition: '你现在心情好了一些吗，让我们一起来看看这件事情吧。',
+            cognitive: '正在思考更深入的分析，请稍候刷新页面查看完整回复。'
+        });
+        
+        // 后台继续处理认知回应，但不阻塞响应返回
+        generateResponse(message, '请对整个事件从不同角度进行分析，让用户全面深刻地认识到这件事情，并且给用户一些具体可实施的方法，让用户能够开始着手改变。注意语气自然，就像两个人在促膝长谈一样，一步一步地引导，多鼓励，不要有心理活动或者场景的描述。')
+            .then(cognitiveResponse => {
+                console.log('后台生成的认知回应:', cognitiveResponse);
+            })
+            .catch(error => {
+                console.error('生成认知回应时出错:', error);
+            });
+            
     } catch (error) {
         console.error('Error in chat endpoint:', {
             error: error.message,
