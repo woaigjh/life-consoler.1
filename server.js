@@ -2,6 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const path = require('path');
+const dotenv = require('dotenv');
+
+// 加载环境变量
+dotenv.config();
 
 const app = express();
 app.use(cors());
