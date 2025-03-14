@@ -307,7 +307,11 @@
             const checkCognitive = async () => {
                 try {
                     // 发送请求检查认知分析是否已生成
-                    const response = await fetch('/api/check-cognitive', {
+                    const baseUrl = window.location.origin;
+                    const apiUrl = `${baseUrl}/api/check-cognitive`;
+                    console.log('检查认知分析请求URL:', apiUrl);
+                    
+                    const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -384,7 +388,12 @@
 
             try {
                 // 发送请求到后端
-                const response = await fetch('/api/chat', {
+                // 获取当前页面URL作为基础URL
+                const baseUrl = window.location.origin;
+                const apiUrl = `${baseUrl}/api/chat`;
+                console.log('发送请求到:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
