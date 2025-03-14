@@ -144,14 +144,24 @@ app.post('/api/chat', async (req, res) => {
         // 发送第一部分响应
         res.json({
             emotional: emotionalResponse,
-            transition: '你现在心情好了一些吗，让我们一起来看看这件事情吧。',
-            cognitive: '正在思考更深入的分析，请稍候刷新页面查看完整回复。'
+            transition: '你现在心情好了一些吗。',
+            cognitive: '唉，这件事确实很难办呢，不过没关系，让我们一起来看看吧。'
         });
+        
+        // 创建一个Map来存储每个消息的认知分析
+        const messageId = Date.now().toString(); // 使用时间戳作为消息ID
+        const cognitiveResponsesMap = app.locals.cognitiveResponsesMap = app.locals.cognitiveResponsesMap || new Map();
         
         // 后台继续处理认知回应，但不阻塞响应返回
         generateResponse(message, '请对整个事件从不同角度进行分析，让用户全面深刻地认识到这件事情，并且给用户一些具体可实施的方法，让用户能够开始着手改变。注意语气自然，就像两个人在促膝长谈一样，一步一步地引导，多鼓励，不要有心理活动或者场景的描述。')
             .then(cognitiveResponse => {
                 console.log('后台生成的认知回应:', cognitiveResponse);
+                // 将认知分析存储到Map中
+                cognitiveResponsesMap.set(message, cognitiveResponse);
+                // 设置过期时间，1小时后自动删除
+                setTimeout(() => {
+                    cognitiveResponsesMap.delete(message);
+                }, 3600000);
             })
             .catch(error => {
                 console.error('生成认知回应时出错:', error);
@@ -159,6 +169,31 @@ app.post('/api/chat', async (req, res) => {
             
     } catch (error) {
         console.error('Error in chat endpoint:', {
+            error: error.message,
+            stack: error.stack
+        });
+        res.status(500).json({ error: '服务器内部错误，请稍后重试' });
+    }
+});
+
+// 添加检查认知分析的API端点
+app.post('/api/check-cognitive', (req, res) => {
+    try {
+        const { message } = req.body;
+        if (!message) {
+            return res.status(400).json({ error: '消息不能为空' });
+        }
+
+        // 从Map中获取存储的认知分析
+        const cognitiveResponsesMap = app.locals.cognitiveResponsesMap || new Map();
+        const cognitiveResponse = cognitiveResponsesMap.get(message);
+
+        // 返回认知分析（如果已生成）
+        res.json({
+            cognitive: cognitiveResponse || '唉，这件事确实很难办呢，不过没关系，让我们一起来看看吧。'
+        });
+    } catch (error) {
+        console.error('Error in check-cognitive endpoint:', {
             error: error.message,
             stack: error.stack
         });

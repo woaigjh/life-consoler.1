@@ -297,6 +297,69 @@
         const messagesContainer = document.getElementById('messages');
         const userInput = document.getElementById('userInput');
         const sendButton = document.getElementById('sendButton');
+        
+        // 轮询检查认知分析是否已生成的函数
+        async function pollForCognitiveResponse(originalMessage, transitionMessageDiv) {
+            let attempts = 0;
+            const maxAttempts = 10; // 最多尝试10次
+            const pollInterval = 3000; // 每3秒检查一次
+            
+            const checkCognitive = async () => {
+                try {
+                    // 发送请求检查认知分析是否已生成
+                    const response = await fetch('/api/check-cognitive', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message: originalMessage })
+                    });
+                    
+                    if (!response.ok) {
+                        console.log('检查认知分析时出错，将继续轮询');
+                        return false;
+                    }
+                    
+                    const data = await response.json();
+                    console.log('检查认知分析结果:', data);
+                    
+                    // 如果认知分析已生成
+                    if (data && data.cognitive && data.cognitive !== "唉，这件事确实很难办呢，不过没关系，让我们一起来看看吧。") {
+                        // 替换过渡消息
+                        const contentDiv = transitionMessageDiv.querySelector('.message-content');
+                        contentDiv.textContent = '';
+                        typeWriter(contentDiv, data.cognitive, 0, () => {
+                            contentDiv.innerHTML = marked.parse(contentDiv.textContent);
+                        });
+                        return true; // 成功获取认知分析
+                    }
+                    
+                    return false; // 认知分析尚未生成
+                } catch (error) {
+                    console.error('轮询认知分析时出错:', error);
+                    return false;
+                }
+            };
+            
+            // 开始轮询
+            const poll = async () => {
+                if (attempts >= maxAttempts) {
+                    console.log('达到最大轮询次数，停止轮询');
+                    return;
+                }
+                
+                attempts++;
+                const success = await checkCognitive();
+                
+                if (!success) {
+                    // 如果尚未获取到认知分析，继续轮询
+                    setTimeout(poll, pollInterval);
+                }
+            };
+            
+            // 立即开始第一次检查
+            setTimeout(poll, pollInterval);
+        }
 
         // 发送消息函数
         async function sendMessage() {
@@ -336,9 +399,6 @@
                 const data = await response.json();
                 console.log('API Response:', data); // 添加日志
 
-                // 移除思考中的提示
-                messagesContainer.removeChild(thinkingDiv);
-
                 // 检查错误
                 if (data.error) {
                     throw new Error(data.error);
@@ -349,21 +409,77 @@
                     throw new Error('服务器返回的数据格式不正确');
                 }
 
-                // 分段显示AI回复
-                if (data.emotional) {
-                    await addMessage(data.emotional, 'assistant');
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-                if (data.transition) {
-                    await addMessage(data.transition, 'assistant');
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-                if (data.cognitive) {
-                    await addMessage(data.cognitive, 'assistant');
+                // 移除思考中的提示并显示AI回复
+                if (thinkingDiv && thinkingDiv.parentNode) {
+                    thinkingDiv.style.opacity = '0';
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    messagesContainer.removeChild(thinkingDiv);
+
+                    // 分段显示AI回复
+                    const response = data.response || data;
+                    if (typeof response === 'string') {
+                        // 如果是单个字符串回复
+                        await addMessage(response, 'assistant');
+                    } else {
+                        // 处理三段式回复
+                        let cognitiveMessageDiv = null;
+                        
+                        // 先显示情绪回应
+                        if (response.emotional) {
+                            await addMessage(response.emotional, 'assistant');
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                        }
+                        
+                        // 显示过渡语并设置一个标识符，以便后续可以替换这条消息
+                        let transitionMessageDiv = null;
+                        if (response.transition) {
+                            await addMessage("你现在心情好了一些吗。", 'assistant');
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            
+                            // 创建过渡消息，并保存引用以便后续替换
+                            transitionMessageDiv = document.createElement('div');
+                            transitionMessageDiv.className = `message assistant`;
+                            transitionMessageDiv.innerHTML = `<div class="message-content"></div>`;
+                            transitionMessageDiv.style.opacity = '0';
+                            messagesContainer.appendChild(transitionMessageDiv);
+                            
+                            const contentDiv = transitionMessageDiv.querySelector('.message-content');
+                            contentDiv.textContent = '';
+                            transitionMessageDiv.style.opacity = '1';
+                            transitionMessageDiv.style.transition = 'opacity 0.3s ease-in-out';
+                            typeWriter(contentDiv, "唉，这件事确实很难办呢，不过没关系，让我们一起来看看吧。", 0, () => {
+                                contentDiv.innerHTML = marked.parse(contentDiv.textContent);
+                            });
+                            
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            
+                            // 开始轮询检查认知分析是否已生成
+                            pollForCognitiveResponse(message, transitionMessageDiv);
+                        }
+                        
+                        // 如果服务器直接返回了认知分析（不太可能，因为认知分析是在后台异步生成的）
+                        if (response.cognitive && response.cognitive !== "唉，这件事确实很难办呢，不过没关系，让我们一起来看看吧。") {
+                            if (transitionMessageDiv) {
+                                // 如果有过渡消息，则替换它
+                                const contentDiv = transitionMessageDiv.querySelector('.message-content');
+                                contentDiv.textContent = '';
+                                typeWriter(contentDiv, response.cognitive, 0, () => {
+                                    contentDiv.innerHTML = marked.parse(contentDiv.textContent);
+                                });
+                            } else {
+                                // 否则添加新消息
+                                await addMessage(response.cognitive, 'assistant');
+                            }
+                        }
+                    }
                 }
 
             } catch (error) {
                 console.error('Error:', error);
+                // 移除思考中的提示
+                if (thinkingDiv && thinkingDiv.parentNode) {
+                    messagesContainer.removeChild(thinkingDiv);
+                }
                 addMessage('抱歉，发生了错误，请稍后重试。', 'assistant');
             }
         }
