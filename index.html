@@ -389,7 +389,9 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ message })
+                    body: JSON.stringify({ message }),
+                    // 添加超时控制
+                    signal: AbortSignal.timeout(30000) // 30秒超时
                 });
 
                 if (!response.ok) {
