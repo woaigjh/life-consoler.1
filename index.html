@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Life Coach AI 助手</title>
+    <!-- 引入marked库，确保在脚本执行前加载 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- 页面样式 -->
     <style>
         /* 全局样式重置 */
@@ -299,10 +301,10 @@
         const sendButton = document.getElementById('sendButton');
         
         // 轮询检查认知分析是否已生成的函数
-        async function pollForCognitiveResponse(originalMessage, transitionMessageDiv) {
+        async function pollForCognitiveResponse(sessionId, transitionMessageDiv) {
             let attempts = 0;
-            const maxAttempts = 10; // 最多尝试10次
-            const pollInterval = 3000; // 每3秒检查一次
+            const maxAttempts = 20; // 增加尝试次数，从10次增加到20次
+            const pollInterval = 2000; // 减少轮询间隔，从3秒减少到2秒
             
             const checkCognitive = async () => {
                 try {
@@ -310,13 +312,14 @@
                     const baseUrl = window.location.origin;
                     const apiUrl = `${baseUrl}/api/check-cognitive`;
                     console.log('检查认知分析请求URL:', apiUrl);
+                    console.log('使用会话ID进行轮询:', sessionId);
                     
                     const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ message: originalMessage })
+                        body: JSON.stringify({ sessionId: sessionId })
                     });
                     
                     if (!response.ok) {
@@ -327,13 +330,22 @@
                     const data = await response.json();
                     console.log('检查认知分析结果:', data);
                     
-                    // 如果认知分析已生成
-                    if (data && data.cognitive && data.cognitive !== "唉，这件事确实很难办呢，不过没关系，让我们一起来看看吧。") {
+                    // 如果认知分析已生成，使用更精确的条件判断
+                    if (data && data.cognitive && 
+                        data.cognitive !== "唉，这件事确实很难办呢，不过没关系，我给你写一封回信慢慢说吧" && 
+                        data.cognitive.length > 20) { // 确保返回的认知分析有足够长度
                         // 替换过渡消息
                         const contentDiv = transitionMessageDiv.querySelector('.message-content');
                         contentDiv.textContent = '';
                         typeWriter(contentDiv, data.cognitive, 0, () => {
-                            contentDiv.innerHTML = marked.parse(contentDiv.textContent);
+                            try {
+                                // 使用try-catch包裹marked解析，防止出错
+                                if (typeof marked !== 'undefined') {
+                                    contentDiv.innerHTML = marked.parse(contentDiv.textContent);
+                                }
+                            } catch (e) {
+                                console.error('Markdown解析出错:', e);
+                            }
                         });
                         return true; // 成功获取认知分析
                     }
@@ -374,7 +386,7 @@
             addMessage(message, 'user');
             userInput.value = '';
 
-            // 添加思考中的提示
+            // 添加思
             const thinkingDiv = document.createElement('div');
             thinkingDiv.className = 'message assistant thinking';
             thinkingDiv.innerHTML = '<div class="message-content">凡事发生皆有利于我</div>';
@@ -388,19 +400,15 @@
 
             try {
                 // 发送请求到后端
-                // 获取当前页面URL作为基础URL
                 const baseUrl = window.location.origin;
                 const apiUrl = `${baseUrl}/api/chat`;
-                console.log('发送请求到:', apiUrl);
-                
+                console.log('发送聊天请求URL:', apiUrl);
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ message }),
-                    // 添加超时控制
-                    signal: AbortSignal.timeout(30000) // 30秒超时
+                    body: JSON.stringify({ message })
                 });
 
                 if (!response.ok) {
@@ -458,18 +466,18 @@
                             contentDiv.textContent = '';
                             transitionMessageDiv.style.opacity = '1';
                             transitionMessageDiv.style.transition = 'opacity 0.3s ease-in-out';
-                            typeWriter(contentDiv, "唉，这件事确实很难办呢，不过没关系，让我们一起来看看吧。", 0, () => {
+                            typeWriter(contentDiv, "唉，这件事确实很难办呢，不过没关系，我给你写一封回信慢慢说吧", 0, () => {
                                 contentDiv.innerHTML = marked.parse(contentDiv.textContent);
                             });
                             
                             await new Promise(resolve => setTimeout(resolve, 1000));
                             
                             // 开始轮询检查认知分析是否已生成
-                            pollForCognitiveResponse(message, transitionMessageDiv);
+                            pollForCognitiveResponse(response.sessionId, transitionMessageDiv);
                         }
                         
                         // 如果服务器直接返回了认知分析（不太可能，因为认知分析是在后台异步生成的）
-                        if (response.cognitive && response.cognitive !== "唉，这件事确实很难办呢，不过没关系，让我们一起来看看吧。") {
+                        if (response.cognitive && response.cognitive !== "唉，这件事确实很难办呢，不过没关系，我给你写一封回信慢慢说吧") {
                             if (transitionMessageDiv) {
                                 // 如果有过渡消息，则替换它
                                 const contentDiv = transitionMessageDiv.querySelector('.message-content');
@@ -555,6 +563,5 @@
             }
         });
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </body>
 </html>

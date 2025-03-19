@@ -36,8 +36,8 @@ const API_AUTH = {
 
 // 添加请求超时和重试机制
 const MAX_RETRIES = 3;
-const TIMEOUT = 30000; // 降低到30秒超时
-const RETRY_DELAY = 1000; // 降低到1秒重试延迟
+const TIMEOUT = 60000; // 增加到60秒超时，给API足够的响应时间
+const RETRY_DELAY = 500; // 降低到0.5秒重试延迟，加快重试速度
 
 // 生成AI回复的函数
 async function generateResponse(message, instruction) {
@@ -144,47 +144,56 @@ app.post('/api/chat', async (req, res) => {
         
         try {
             // 只获取情感回应，减少响应时间
-            const emotionalResponse = await generateResponse(message, '请对用户的消息进行情绪分析，就事论事，给出富有同理心和灵性的回应，孩童般那无理但有情，打动人心，让用户感到温暖与被理解，使用户重拾勇气与信心。注意回复不要太长，选择最能打动人心的一两句话回复，不要有心理活动或者场景的描述。采用信件的格式书写');
+            const emotionalResponse = await generateResponse(message, '请对用户的消息进行情绪分析，就事论事，给出富有同理心和灵性的回应，孩童般那无理但有情，打动人心，让用户感到温暖与被理解，使用户重拾勇气与信心。注意回复不要太长，选择最能打动人心的一两句话回复，不要有心理活动或者场景的描述。');
             
             clearTimeout(timeoutId);
             
-            // 发送第一部分响应
+            // 创建一个Map来存储每个消息的认知分析
+            const cognitiveResponsesMap = app.locals.cognitiveResponsesMap = app.locals.cognitiveResponsesMap || new Map();
+            
+            // 确保使用一致的默认认知回复
+            const defaultCognitive = '唉，这件事确实很难办呢，不过没关系，我给你写一封回信慢慢说吧';
+            
+            // 生成一个唯一的会话ID作为键
+            const sessionId = Date.now().toString() + Math.random().toString(36).substring(2, 15);
+            console.log('生成的会话ID:', sessionId);
+            
+            // 发送第一部分响应，包含会话ID
             res.json({
                 emotional: emotionalResponse,
                 transition: '你现在心情好了一些吗。',
-                cognitive: '唉，这件事确实很难办呢，不过没关系，我们一起来看看吧。'
+                cognitive: defaultCognitive,
+                sessionId: sessionId
             });
+            
+            // 后台继续处理认知回应，但不阻塞响应返回
+            setTimeout(async () => {
+                try {
+                    // 改进提示词，使认知回复更有价值，并添加第四段内容
+                    const cognitiveResponse = await generateResponse(message, '请对用户的消息进行深入分析，理解他们的情感状态和潜在需求。以浪矢爷爷的身份，用温暖和智慧的语气回复，像一个值得信赖的长者一样倾听他们的烦恼。\n\n请提供以下四个部分的回复：\n1. 对用户情况的理解和共情\n2. 对问题本质的分析\n3. 实用的建议和鼓励\n4. 一段温暖的结语\n\n以信件格式书写，开头称呼"亲爱的朋友"，结尾落款"浪矢爷爷"');
+                    console.log('后台生成的认知回应:', cognitiveResponse);
+                    // 将认知分析存储到Map中，使用会话ID作为键
+                    cognitiveResponsesMap.set(sessionId, cognitiveResponse);
+                    console.log('已存储认知分析，当前Map大小:', cognitiveResponsesMap.size);
+                    console.log('存储的会话ID:', sessionId);
+                    // 设置过期时间，1小时后自动删除
+                    setTimeout(() => {
+                        cognitiveResponsesMap.delete(sessionId);
+                    }, 3600000);
+                } catch (error) {
+                    console.error('生成认知回应时出错:', error);
+                }
+            }, 100); // 延迟100ms开始处理，确保主响应已经返回
         } catch (error) {
             clearTimeout(timeoutId);
             // 如果情感回应生成失败，返回默认回应
             res.json({
                 emotional: '亲爱的朋友，我能感受到你的心情。无论如何，请记住，每一个困难都是暂时的，而你比你想象的更坚强。',
                 transition: '你现在心情好了一些吗。',
-                cognitive: '唉，这件事确实很难办呢，不过没关系，我们一起来看看吧。'
+                cognitive: '唉，这件事确实很难办呢，不过没关系，我给你写一封回信慢慢说吧'
             });
             console.error('生成情感回应时出错:', error);
         }
-        
-        // 创建一个Map来存储每个消息的认知分析
-        const messageId = Date.now().toString(); // 使用时间戳作为消息ID
-        const cognitiveResponsesMap = app.locals.cognitiveResponsesMap = app.locals.cognitiveResponsesMap || new Map();
-        
-        // 后台继续处理认知回应，但不阻塞响应返回
-        setTimeout(() => {
-            generateResponse(message, '请对整个事件从不同角度进行分析，让用户全面深刻地认识到这件事情，并且给用户一些具体可实施的方法，让用户能够开始着手改变。注意语气自然，就像两个人在促膝长谈一样，一步一步地引导，多鼓励，不要有心理活动或者场景的描述。采用信件的格式书写')
-                .then(cognitiveResponse => {
-                    console.log('后台生成的认知回应:', cognitiveResponse);
-                    // 将认知分析存储到Map中
-                    cognitiveResponsesMap.set(message, cognitiveResponse);
-                    // 设置过期时间，1小时后自动删除
-                    setTimeout(() => {
-                        cognitiveResponsesMap.delete(message);
-                    }, 3600000);
-                })
-                .catch(error => {
-                    console.error('生成认知回应时出错:', error);
-                });
-        }, 100); // 延迟100ms开始处理，确保主响应已经返回
             
     } catch (error) {
         console.error('Error in chat endpoint:', {
@@ -197,20 +206,36 @@ app.post('/api/chat', async (req, res) => {
 
 // 添加检查认知分析的API端点
 app.post('/api/check-cognitive', (req, res) => {
+    // 设置CORS响应头
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+
+    // 处理OPTIONS请求
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    
     try {
-        const { message } = req.body;
-        if (!message) {
-            return res.status(400).json({ error: '消息不能为空' });
+        const { sessionId } = req.body;
+        console.log('收到检查认知分析请求，会话ID:', sessionId);
+        
+        if (!sessionId) {
+            return res.status(400).json({ error: '会话ID不能为空' });
         }
 
         // 从Map中获取存储的认知分析
         const cognitiveResponsesMap = app.locals.cognitiveResponsesMap || new Map();
-        const cognitiveResponse = cognitiveResponsesMap.get(message);
+        console.log('当前Map大小:', cognitiveResponsesMap.size);
+        const cognitiveResponse = cognitiveResponsesMap.get(sessionId);
+        console.log('查找到的认知分析:', cognitiveResponse ? '已找到' : '未找到');
 
         // 返回认知分析（如果已生成）
         res.json({
-            cognitive: cognitiveResponse || '唉，这件事确实很难办呢，不过没关系，让我们一起来看看吧。'
+            cognitive: cognitiveResponse || '唉，这件事确实很难办呢，不过没关系，我给你写一封回信慢慢说吧'
         });
+        // 记录返回的认知分析内容
+        console.log('返回的认知分析:', cognitiveResponse ? cognitiveResponse.substring(0, 50) + '...' : '使用默认值');
     } catch (error) {
         console.error('Error in check-cognitive endpoint:', {
             error: error.message,
