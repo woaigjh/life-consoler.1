@@ -97,10 +97,17 @@
 
         .message-content {
             max-width: 70%;
-            padding: 15px 20px;
-            border-radius: 18px;
+            padding: 25px 30px;
             margin: 0 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            position: relative;
+            font-family: 'Times New Roman', serif;
+            line-height: 1.6;
+            background-image: linear-gradient(0deg, #f7fafc 1px, transparent 1px);
+            background-size: 100% 2em;
+            border-radius: 3px;
             transition: transform 0.2s ease;
         }
 
@@ -109,15 +116,41 @@
         }
 
         .user .message-content {
-            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
-            color: #fff;
-            border-bottom-right-radius: 5px;
+            color: #2d3748;
+            border-top-right-radius: 15px;
+            border-bottom-left-radius: 15px;
+            transform-origin: top right;
+        }
+        
+        .user .message-content::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 20px;
+            height: 20px;
+            background: #4299e1;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(66, 153, 225, 0.3);
         }
 
         .assistant .message-content {
-            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
             color: #2d3748;
-            border-bottom-left-radius: 5px;
+            border-top-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            transform-origin: top left;
+        }
+        
+        .assistant .message-content::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 20px;
+            height: 20px;
+            background: #3182ce;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(49, 130, 206, 0.3);
         }
 
         /* 输入区域 */
@@ -169,6 +202,53 @@
             background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
         }
 
+        /* 信件样式 */
+        .letter-style {
+            background-color: #fffef7 !important;
+            background-image: linear-gradient(0deg, #f0e6d2 1px, transparent 1px) !important;
+            border: 1px solid #d3b17d !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+            font-family: 'Times New Roman', serif !important;
+            padding: 30px !important;
+            position: relative;
+            animation: letter-appear 0.5s ease-out;
+        }
+        
+        @keyframes letter-appear {
+            0% {
+                opacity: 0;
+                transform: scale(0.95) rotate(-1deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0);
+            }
+        }
+        
+        .user .letter-style::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23d3b17d"><path d="M20,4H4C2.9,4,2,4.9,2,6v12c0,1.1,0.9,2,2,2h16c1.1,0,2-0.9,2-2V6C22,4.9,21.1,4,20,4z M20,8l-8,5L4,8V6l8,5l8-5V8z"/></svg>');
+            background-size: contain;
+            opacity: 0.7;
+        }
+        
+        .assistant .letter-style::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 30px;
+            height: 30px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%233182ce"><path d="M20,4H4C2.9,4,2,4.9,2,6v12c0,1.1,0.9,2,2,2h16c1.1,0,2-0.9,2-2V6C22,4.9,21.1,4,20,4z M20,8l-8,5L4,8V6l8,5l8-5V8z"/></svg>');
+            background-size: contain;
+            opacity: 0.7;
+        }
+        
         /* 思考中的动画效果 */
         .thinking .message-content {
             background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
@@ -336,6 +416,8 @@
                         data.cognitive.length > 20) { // 确保返回的认知分析有足够长度
                         // 替换过渡消息
                         const contentDiv = transitionMessageDiv.querySelector('.message-content');
+                        // 添加信件样式类
+                        contentDiv.classList.add('letter-style');
                         contentDiv.textContent = '';
                         typeWriter(contentDiv, data.cognitive, 0, () => {
                             try {
@@ -481,6 +563,8 @@
                             if (transitionMessageDiv) {
                                 // 如果有过渡消息，则替换它
                                 const contentDiv = transitionMessageDiv.querySelector('.message-content');
+                                // 添加信件样式类
+                                contentDiv.classList.add('letter-style');
                                 contentDiv.textContent = '';
                                 typeWriter(contentDiv, response.cognitive, 0, () => {
                                     contentDiv.innerHTML = marked.parse(contentDiv.textContent);
@@ -524,6 +608,18 @@
             messagesContainer.appendChild(messageDiv);
 
             const contentDiv = messageDiv.querySelector('.message-content');
+            
+            // 判断是否是认知回复（第三段）
+            const isCognitiveResponse = type === 'assistant' && 
+                content.length > 50 && 
+                !content.includes('深夜的杂货店亮着灯') && 
+                !content.includes('你现在心情好了一些吗') && 
+                !content.includes('唉，这件事确实很难办呢');
+                
+            // 如果是用户消息或认知回复，添加信件样式类
+            if (type === 'user' || isCognitiveResponse) {
+                contentDiv.classList.add('letter-style');
+            }
             
             // 如果是AI回复，使用打字机效果
             if (type === 'assistant') {
