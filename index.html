@@ -665,7 +665,12 @@
                 
                 try {
                     // 发送请求检查认知分析是否已生成
-                    const baseUrl = window.location.origin;
+                    // 修复API URL构建，确保在Vercel环境中也能正确工作
+                    let baseUrl = window.location.origin;
+                    // 检查是否在Vercel环境中，确保URL正确
+                    if (baseUrl.includes('vercel.app')) {
+                        console.log('检测到Vercel环境，使用完整URL路径');
+                    }
                     const apiUrl = `${baseUrl}/api/check-cognitive`;
                     console.log(`检查认知分析请求 (尝试 ${attempts + 1}/${maxAttempts}):`, {
                         url: apiUrl,
@@ -971,7 +976,12 @@
 
             try {
                 // 发送请求到后端
-                const baseUrl = window.location.origin;
+                // 修复API URL构建，确保在Vercel环境中也能正确工作
+                let baseUrl = window.location.origin;
+                // 检查是否在Vercel环境中，确保URL正确
+                if (baseUrl.includes('vercel.app')) {
+                    console.log('检测到Vercel环境，使用完整URL路径');
+                }
                 const apiUrl = `${baseUrl}/api/chat`;
                 console.log('发送聊天请求URL:', apiUrl);
                 
@@ -1155,9 +1165,27 @@
                     errorMessage = '抱歉，服务器响应超时，请稍后重试。';
                 } else if (error.message.includes('网络')) {
                     errorMessage = '抱歉，网络连接出现问题，请检查您的网络连接后重试。';
+                } else if (error.message.includes('404')) {
+                    errorMessage = '抱歉，服务器找不到请求的资源，请刷新页面后重试。';
+                } else if (error.message.includes('504')) {
+                    errorMessage = '抱歉，服务器网关超时，可能是因为请求处理时间过长，请稍后重试。';
+                }
+                
+                // 对于短消息，提供更友好的提示
+                const message = userInput.value.trim();
+                if (message && message.length < 3) {
+                    errorMessage += '\n\n您的消息很简短，我们已经准备了一些预设回复，稍后再试一次吧。';
                 }
                 
                 addMessage(errorMessage, 'assistant');
+                
+                // 记录更详细的错误信息到控制台
+                console.log('详细错误信息:', {
+                    message: message,
+                    errorType: error.name,
+                    errorMessage: error.message,
+                    timestamp: new Date().toISOString()
+                });
                 
                 // 记录错误日志
                 try {

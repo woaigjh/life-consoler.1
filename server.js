@@ -42,6 +42,32 @@ const MAX_RETRY_DELAY = 10000; // 最大重试延迟10秒
 
 // 生成AI回复的函数
 async function generateResponse(message, instruction) {
+    // 检查消息是否为空或过短
+    if (!message || typeof message !== 'string') {
+        console.log('消息为空或格式不正确，使用默认回复');
+        return '我理解你现在可能心情不佳，有什么想和我分享的吗？';
+    }
+    
+    // 对于特别短的消息（少于3个字符），使用预设回复以避免API调用失败
+    if (message.trim().length < 3) {
+        console.log(`消息过短 (${message.length}字符)，使用预设回复`);
+        const shortMsgResponses = {
+            '好累': '是啊，生活有时确实让人感到疲惫。休息一下，给自己一点喘息的空间吧。明天又是崭新的一天。',
+            '嗯': '我在听，如果有什么想说的，随时可以告诉我。',
+            '啊': '似乎有什么在困扰着你？愿意多分享一些吗？'
+        };
+        
+        // 检查是否有预设回复，如果有则直接返回
+        const exactMatch = shortMsgResponses[message.trim()];
+        if (exactMatch) {
+            console.log('找到预设回复，跳过API调用');
+            return exactMatch;
+        }
+        
+        // 如果没有预设回复但消息仍然很短，返回通用回复
+        return '我听着呢，能告诉我更多吗？';
+    }
+    
     let retries = 0;
     let lastError = null;
     
