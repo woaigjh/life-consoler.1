@@ -216,8 +216,16 @@ app.post('/api/chat', async (req, res) => {
                     const cognitiveResponse = await generateResponse(message, '请对用户的消息进行深入分析，理解他们的情感状态和潜在需求。以浪矢爷爷的身份，用温暖和智慧的语气回复，像一个值得信赖的长者一样倾听他们的烦恼。\n\n请提供以下四个部分的回复：\n1. 对用户情况的理解和共情\n2. 对问题本质的分析\n3. 实用的建议和鼓励\n4. 一段温暖的结语\n\n以信件格式书写，开头称呼"亲爱的朋友"，结尾落款"浪矢爷爷"');
                     console.log('后台生成的认知回应:', cognitiveResponse);
                     
-                    // 验证认知回应是否有效
+                    // 验证认知回应是否有效，增强验证逻辑
                     if (cognitiveResponse && typeof cognitiveResponse === 'string' && cognitiveResponse.length > 50) {
+                        // 记录认知回应的详细信息，便于调试
+                        console.log('认知回应详情:', {
+                            sessionId: sessionId,
+                            contentLength: cognitiveResponse.length,
+                            firstChars: cognitiveResponse.substring(0, 50) + '...',
+                            timestamp: new Date().toISOString()
+                        });
+                        
                         // 将认知分析存储到Map中，使用会话ID作为键
                         cognitiveResponsesMap.set(sessionId, cognitiveResponse);
                         console.log('已存储认知分析，当前Map大小:', cognitiveResponsesMap.size);
@@ -295,6 +303,15 @@ app.post('/api/check-cognitive', (req, res) => {
             console.log('认知分析内容无效或太短，使用默认回复');
             responseToSend = '亲爱的朋友，\n\n感谢你的来信。我正在思考如何更好地回应你的问题，但似乎我需要更多时间来整理思绪。请稍后再来查看我的回信，或者你可以再次表达你的想法，帮助我更好地理解你的处境。\n\n期待再次收到你的来信，\n浪矢爷爷';
         }
+        
+        // 记录详细的认知分析状态，便于调试
+        console.log('认知分析状态详情:', {
+            sessionId: sessionId,
+            found: responseToSend !== null,
+            contentType: typeof responseToSend,
+            contentLength: responseToSend ? responseToSend.length : 0,
+            timestamp: new Date().toISOString()
+        });
 
         // 返回认知分析
         res.json({
