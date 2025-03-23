@@ -270,6 +270,48 @@
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
             animation: shimmer 2s infinite;
         }
+        
+        /* 加载动画样式 */
+        .loading-dots {
+            display: inline-block;
+            margin-top: 10px;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .loading-dots span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #3182ce;
+            margin: 0 3px;
+            opacity: 0.6;
+            animation: loadingDots 1.4s infinite ease-in-out both;
+        }
+        
+        .loading-dots span:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes loadingDots {
+            0%, 80%, 100% {
+                transform: scale(0.6);
+                opacity: 0.4;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
 
         @keyframes thinking {
             0% {
@@ -317,6 +359,159 @@
             }
         }
 
+        /* 历史对话信箱样式 */
+        .mailbox-container {
+            position: fixed;
+            top: 0;
+            right: -350px; /* 初始隐藏在右侧 */
+            width: 350px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.97);
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transition: right 0.3s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .mailbox-container.active {
+            right: 0;
+        }
+
+        .mailbox-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mailbox-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .close-mailbox {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        .mailbox-search {
+            padding: 15px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .mailbox-search input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .mailbox-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .mail-item {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: background 0
+            .3s ease;
+            position: relative;
+        }
+
+        .mail-item:hover {
+            background: #f7fafc;
+        }
+
+        .mail-item .mail-time {
+            font-size: 0.8em;
+            color: #718096;
+            margin-bottom: 5px;
+        }
+
+        .mail-item .mail-preview {
+            color: #4a5568;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mail-item .delete-mail {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            color: #e53e3e;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .mail-item:hover .delete-mail {
+            opacity: 1;
+        }
+
+        /* 新信件按钮样式 */
+        .new-letter-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            transition: all 0.3s ease;
+            z-index: 900;
+        }
+
+        .new-letter-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 信箱图标按钮 */
+        .mailbox-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 110px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            transition: all 0.3s ease;
+            z-index: 900;
+        }
+
+        .mailbox-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
         /* 响应式设计 */
         @media (max-width: 600px) {
             .container {
@@ -337,6 +532,22 @@
 
             .input-container textarea {
                 height: 50px;
+            }
+
+            .mailbox-container {
+                width: 100%;
+                right: -100%;
+            }
+
+            .new-letter-btn,
+            .mailbox-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2em;
+            }
+
+            .mailbox-btn {
+                right: 90px;
             }
         }
     </style>
@@ -373,52 +584,182 @@
         </div>
     </div>
 
+    <!-- 历史对话信箱 -->
+    <div class="mailbox-container" id="mailboxContainer">
+        <div class="mailbox-header">
+            <h2>历史对话信箱</h2>
+            <button class="close-mailbox" id="closeMailbox">×</button>
+        </div>
+        <div class="mailbox-search">
+            <input type="text" id="mailSearch" placeholder="搜索历史对话...">
+        </div>
+        <div class="mailbox-list" id="mailboxList">
+            <!-- 历史对话项将通过JavaScript动态添加 -->
+        </div>
+    </div>
+
+    <!-- 新信件按钮 -->
+    <button class="new-letter-btn" id="newLetterBtn" title="寄出新的信件">✉️</button>
+
+    <!-- 信箱按钮 -->
+    <button class="mailbox-btn" id="mailboxBtn" title="查看历史对话">📬</button>
+
     <!-- 页面脚本 -->
     <script>
         // 获取DOM元素
         const messagesContainer = document.getElementById('messages');
         const userInput = document.getElementById('userInput');
         const sendButton = document.getElementById('sendButton');
+        const mailboxContainer = document.getElementById('mailboxContainer');
+        const closeMailbox = document.getElementById('closeMailbox');
+        const mailboxBtn = document.getElementById('mailboxBtn');
+        const newLetterBtn = document.getElementById('newLetterBtn');
+        const mailboxList = document.getElementById('mailboxList');
+        const mailSearch = document.getElementById('mailSearch');
+        
+        // 当前会话ID
+        let currentSessionId = generateSessionId();
+        
+        // 生成会话ID
+        function generateSessionId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
         
         // 轮询检查认知分析是否已生成的函数
         async function pollForCognitiveResponse(sessionId, transitionMessageDiv) {
             let attempts = 0;
-            const maxAttempts = 20; // 增加尝试次数，从10次增加到20次
-            const pollInterval = 2000; // 减少轮询间隔，从3秒减少到2秒
+            const maxAttempts = 90; // 增加最大尝试次数到90次，提供更长的等待时间
+            const initialPollInterval = 2000; // 初始轮询间隔2秒，提高响应速度
+            const maxPollInterval = 8000; // 最大轮询间隔8秒
+            let currentPollInterval = initialPollInterval;
+            let consecutiveErrors = 0;
+            const maxConsecutiveErrors = 3; // 最大连续错误次数
+            let isProcessing = false; // 添加处理状态标志
+            let hasReceivedResponse = false; // 标记是否已收到有效回复
+            
+            // 显示加载状态
+            const contentDiv = transitionMessageDiv.querySelector('.message-content');
+            contentDiv.innerHTML += '<div class="loading-dots"><span>.</span><span>.</span><span>.</span></div>';
+            
+            // 添加用户反馈机制
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = 'feedback-container';
+            feedbackDiv.innerHTML = `
+                <button class="feedback-btn" id="reportIssueBtn" title="报告问题">⚠️ 回复显示问题</button>
+            `;
+            feedbackDiv.style.display = 'none';
+            transitionMessageDiv.appendChild(feedbackDiv);
             
             const checkCognitive = async () => {
+                // 如果已经在处理中，则跳过本次检查
+                if (isProcessing) {
+                    console.log('上一次请求仍在处理中，跳过本次检查');
+                    return false;
+                }
+                
+                isProcessing = true; // 标记为处理中
+                
                 try {
                     // 发送请求检查认知分析是否已生成
                     const baseUrl = window.location.origin;
                     const apiUrl = `${baseUrl}/api/check-cognitive`;
-                    console.log('检查认知分析请求URL:', apiUrl);
-                    console.log('使用会话ID进行轮询:', sessionId);
+                    console.log(`检查认知分析请求 (尝试 ${attempts + 1}/${maxAttempts}):`, {
+                        url: apiUrl,
+                        sessionId: sessionId
+                    });
+                    
+                    // 设置请求超时
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => {
+                        controller.abort();
+                        console.log('检查认知分析请求超时 (8秒)');
+                    }, 8000);
                     
                     const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ sessionId: sessionId })
+                        body: JSON.stringify({ sessionId: sessionId }),
+                        signal: controller.signal
                     });
                     
+                    clearTimeout(timeoutId);
+                    
                     if (!response.ok) {
-                        console.log('检查认知分析时出错，将继续轮询');
+                        console.log(`检查认知分析时出错 (HTTP ${response.status})，将继续轮询`);
+                        consecutiveErrors++;
+                        // 如果连续错误次数过多，增加轮询间隔
+                        if (consecutiveErrors >= maxConsecutiveErrors) {
+                            currentPollInterval = Math.min(currentPollInterval * 1.5, maxPollInterval);
+                            console.log(`连续错误次数过多，增加轮询间隔至 ${currentPollInterval}ms`);
+                        }
+                        isProcessing = false; // 重置处理状态
                         return false;
                     }
+                    
+                    // 重置连续错误计数
+                    consecutiveErrors = 0;
                     
                     const data = await response.json();
                     console.log('检查认知分析结果:', data);
                     
                     // 如果认知分析已生成，使用更精确的条件判断
+                    // 增强识别条件：检查认知回复的标识符、长度和内容特征
+                    console.log('认知分析内容检查:', {
+                        hasData: !!data,
+                        hasCognitive: data && !!data.cognitive,
+                        contentLength: data && data.cognitive ? data.cognitive.length : 0,
+                        isDefaultResponse: data && data.cognitive === "唉，这件事确实很难办呢，不过没关系，我给你写一封回信慢慢说吧",
+                        firstChars: data && data.cognitive ? data.cognitive.substring(0, 30) : ''
+                    });
+                    
+                    // 优化判断条件：只要不是默认回复且长度合理就显示
+                    // 如果服务器返回null，表示认知分析尚未生成，继续轮询
+                    if (data && data.cognitive === null) {
+                        console.log('服务器返回null，认知分析尚未生成，继续轮询');
+                        isProcessing = false;
+                        return false;
+                    }
+                    
                     if (data && data.cognitive && 
                         data.cognitive !== "唉，这件事确实很难办呢，不过没关系，我给你写一封回信慢慢说吧" && 
-                        data.cognitive.length > 20) { // 确保返回的认知分析有足够长度
-                        // 替换过渡消息
-                        const contentDiv = transitionMessageDiv.querySelector('.message-content');
+                        data.cognitive.length > 10) { // 进一步降低长度阈值，确保能捕获到有效回复
+                        
+                        // 记录接收到的认知分析内容，便于调试
+                        console.log('接收到认知分析内容:', data.cognitive.substring(0, 100) + '...');
+                        
+                        
+                        // 标记已收到有效回复
+                        hasReceivedResponse = true;
+                        
+                        // 移除加载动画
+                        const loadingDots = contentDiv.querySelector('.loading-dots');
+                        if (loadingDots) {
+                            contentDiv.removeChild(loadingDots);
+                        }
+                        
+                        // 检查是否为默认回复，如果是则完全清除内容
+                        if (contentDiv.dataset.isDefaultResponse === 'true') {
+                            console.log('检测到默认回复，将完全替换为认知分析结果');
+                            // 移除默认回复标记
+                            delete contentDiv.dataset.isDefaultResponse;
+                        }
+                        
+                        // 无论是否为默认回复，都强制清除内容并显示后台回复
+                        console.log('强制清除现有内容，显示后台生成的认知回复');
+                        
                         // 添加信件样式类
                         contentDiv.classList.add('letter-style');
+                        // 完全清除内容，确保没有残留
+                        contentDiv.innerHTML = '';
                         contentDiv.textContent = '';
+                        
+                        // 添加调试标记
+                        contentDiv.dataset.responseSource = 'backend';
+                        contentDiv.dataset.responseTime = new Date().toISOString();
+                        
+                        // 使用打字机效果显示认知分析结果
                         typeWriter(contentDiv, data.cognitive, 0, () => {
                             try {
                                 // 使用try-catch包裹marked解析，防止出错
@@ -427,36 +768,149 @@
                                 }
                             } catch (e) {
                                 console.error('Markdown解析出错:', e);
+                                // 如果解析失败，至少显示原始文本
+                                contentDiv.textContent = data.cognitive;
                             }
+                            
+                            // 记录成功显示的回复到控制台，便于调试
+                            console.log('成功显示后台生成的认知回复');
                         });
+                        isProcessing = false; // 重置处理状态
                         return true; // 成功获取认知分析
                     }
                     
+                    // 如果轮询次数达到一半，减少轮询间隔以提高响应速度
+                    if (attempts === Math.floor(maxAttempts / 2)) {
+                        currentPollInterval = initialPollInterval;
+                        console.log(`轮询已达到一半次数，重置轮询间隔为 ${currentPollInterval}ms`);
+                    }
+                    
+                    isProcessing = false; // 重置处理状态
                     return false; // 认知分析尚未生成
                 } catch (error) {
                     console.error('轮询认知分析时出错:', error);
+                    consecutiveErrors++;
+                    
+                    // 如果连续错误次数过多，增加轮询间隔
+                    if (consecutiveErrors >= maxConsecutiveErrors) {
+                        currentPollInterval = Math.min(currentPollInterval * 1.5, maxPollInterval);
+                        console.log(`连续错误次数过多，增加轮询间隔至 ${currentPollInterval}ms`);
+                    }
+                    
+                    isProcessing = false; // 重置处理状态
                     return false;
                 }
             };
             
             // 开始轮询
             const poll = async () => {
+                console.log(`轮询状态检查: 尝试次数=${attempts}/${maxAttempts}, 已收到回复=${hasReceivedResponse}, 处理中=${isProcessing}`);
+                
+                // 如果已经收到有效回复，则停止轮询
+                if (hasReceivedResponse) {
+                    console.log('已收到有效回复，停止轮询');
+                    return;
+                }
+                
                 if (attempts >= maxAttempts) {
                     console.log('达到最大轮询次数，停止轮询');
+                    // 确保没有正在处理的请求
+                    if (isProcessing) {
+                        console.log('等待当前请求完成...');
+                        // 等待当前请求完成
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
+                    
+                    // 移除加载动画
+                    const loadingDots = contentDiv.querySelector('.loading-dots');
+                    if (loadingDots) {
+                        contentDiv.removeChild(loadingDots);
+                    }
+                    
+                    // 记录轮询结束状态
+                    console.log('轮询结束状态:', {
+                        attempts: attempts,
+                        hasReceivedResponse: hasReceivedResponse,
+                        contentDivText: contentDiv.textContent.substring(0, 50) + '...',
+                        contentDivHtml: contentDiv.innerHTML.substring(0, 50) + '...'
+                    });
+                    
+                    // 尝试最后一次检查认知分析
+                    console.log('尝试最后一次检查认知分析...');
+                    const finalCheck = await checkCognitive();
+                    
+                    // 如果最后一次检查成功，则不显示超时消息
+                    if (finalCheck) {
+                        console.log('最后一次检查成功获取到认知分析');
+                        return;
+                    }
+                    
+                    console.log('最后一次检查仍未获取到认知分析，显示友好的超时消息');
+                    
+                    // 显示友好的超时消息
+                    contentDiv.classList.add('letter-style');
+                    contentDiv.textContent = '';
+                    typeWriter(contentDiv, "亲爱的朋友，\n\n感谢你的来信。我正在思考如何更好地回应你的问题，但似乎需要更多时间。如果方便的话，请稍后再来查看，或者你可以再次表达你的想法，帮助我更好地理解你的处境。\n\n期待再次收到你的来信，\n浪矢爷爷", 0, () => {
+                        try {
+                            if (typeof marked !== 'undefined') {
+                                contentDiv.innerHTML = marked.parse(contentDiv.textContent);
+                            }
+                        } catch (e) {
+                            console.error('Markdown解析出错:', e);
+                        }
+                        
+                        // 显示反馈按钮
+                        const feedbackDiv = transitionMessageDiv.querySelector('.feedback-container');
+                        if (feedbackDiv) {
+                            console.log('显示反馈按钮，允许用户手动触发重新获取回复');
+                            feedbackDiv.style.display = 'block';
+                            
+                            // 添加反馈按钮点击事件
+                            const reportBtn = feedbackDiv.querySelector('#reportIssueBtn');
+                            if (reportBtn) {
+                                reportBtn.addEventListener('click', () => {
+                                    // 记录问题
+                                    console.log('用户点击了反馈按钮，尝试重新获取回复，会话ID:', sessionId);
+                                    // 手动触发一次检查
+                                    checkCognitive();
+                                    alert('已尝试重新获取回复，如果问题仍然存在，请刷新页面重试。');
+                                    
+                                    // 可以在这里添加发送反馈到服务器的代码
+                                    try {
+                                        fetch(`${window.location.origin}/api/feedback`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ 
+                                                sessionId: sessionId,
+                                                issue: 'cognitive_response_display_issue',
+                                                timestamp: new Date().toISOString()
+                                            })
+                                        }).catch(err => console.error('发送反馈时出错:', err));
+                                    } catch (e) {
+                                        console.error('发送反馈时出错:', e);
+                                    }
+                                });
+                            }
+                        }
+                    });
                     return;
                 }
                 
                 attempts++;
+                // 添加随机延迟，避免请求同时发送
+                const jitter = Math.floor(Math.random() * 500); // 0-500ms的随机延迟
+                await new Promise(resolve => setTimeout(resolve, jitter));
+                
                 const success = await checkCognitive();
                 
                 if (!success) {
                     // 如果尚未获取到认知分析，继续轮询
-                    setTimeout(poll, pollInterval);
+                    setTimeout(poll, currentPollInterval);
                 }
             };
             
             // 立即开始第一次检查
-            setTimeout(poll, pollInterval);
+            setTimeout(poll, initialPollInterval);
         }
 
         // 发送消息函数
@@ -468,7 +922,7 @@
             addMessage(message, 'user');
             userInput.value = '';
 
-            // 添加思
+            // 添加思考中的提示
             const thinkingDiv = document.createElement('div');
             thinkingDiv.className = 'message assistant thinking';
             thinkingDiv.innerHTML = '<div class="message-content">凡事发生皆有利于我</div>';
@@ -485,13 +939,25 @@
                 const baseUrl = window.location.origin;
                 const apiUrl = `${baseUrl}/api/chat`;
                 console.log('发送聊天请求URL:', apiUrl);
+                
+                // 设置请求超时
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => {
+                    controller.abort();
+                    console.log('聊天请求超时 (15秒)');
+                    throw new Error('请求超时，请稍后重试');
+                }, 15000);
+                
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ message })
+                    body: JSON.stringify({ message, sessionId: currentSessionId }),
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
 
                 if (!response.ok) {
                     throw new Error(`服务器响应错误: ${response.status}`);
@@ -540,6 +1006,7 @@
                             // 创建过渡消息，并保存引用以便后续替换
                             transitionMessageDiv = document.createElement('div');
                             transitionMessageDiv.className = `message assistant`;
+                            transitionMessageDiv.dataset.messageType = 'cognitive'; // 添加数据属性标识认知回复
                             transitionMessageDiv.innerHTML = `<div class="message-content"></div>`;
                             transitionMessageDiv.style.opacity = '0';
                             messagesContainer.appendChild(transitionMessageDiv);
@@ -548,6 +1015,8 @@
                             contentDiv.textContent = '';
                             transitionMessageDiv.style.opacity = '1';
                             transitionMessageDiv.style.transition = 'opacity 0.3s ease-in-out';
+                            // 添加默认回复标记，便于后续识别和替换
+                            contentDiv.dataset.isDefaultResponse = 'true';
                             typeWriter(contentDiv, "唉，这件事确实很难办呢，不过没关系，我给你写一封回信慢慢说吧", 0, () => {
                                 contentDiv.innerHTML = marked.parse(contentDiv.textContent);
                             });
@@ -555,27 +1024,88 @@
                             await new Promise(resolve => setTimeout(resolve, 1000));
                             
                             // 开始轮询检查认知分析是否已生成
-                            pollForCognitiveResponse(response.sessionId, transitionMessageDiv);
+                            if (response.sessionId) {
+                                console.log('开始轮询检查认知回复，会话ID:', response.sessionId);
+                                pollForCognitiveResponse(response.sessionId, transitionMessageDiv);
+                            } else {
+                                console.error('缺少会话ID，无法轮询认知回复');
+                                // 记录错误日志
+                                try {
+                                    fetch(`${window.location.origin}/api/log-error`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ 
+                                            error: 'missing_session_id',
+                                            message: '缺少会话ID，无法轮询认知回复',
+                                            timestamp: new Date().toISOString()
+                                        })
+                                    }).catch(err => console.error('记录错误日志时出错:', err));
+                                } catch (e) {
+                                    console.error('记录错误日志时出错:', e);
+                                }
+                            }
                         }
                         
                         // 如果服务器直接返回了认知分析（不太可能，因为认知分析是在后台异步生成的）
-                        if (response.cognitive && response.cognitive !== "唉，这件事确实很难办呢，不过没关系，我给你写一封回信慢慢说吧") {
+                        // 但如果确实返回了，我们应该优先显示它
+                        if (response.cognitive && 
+                            response.cognitive !== "唉，这件事确实很难办呢，不过没关系，我给你写一封回信慢慢说吧" &&
+                            response.cognitive.length > 20) { // 降低长度阈值，确保能捕获到较短的有效回复
+                            
+                            // 记录直接返回的认知分析内容，便于调试
+                            console.log('服务器直接返回的认知分析内容:', response.cognitive.substring(0, 100) + '...');
+                            
+                            console.log('服务器直接返回了认知分析，优先显示');
+                            
                             if (transitionMessageDiv) {
                                 // 如果有过渡消息，则替换它
                                 const contentDiv = transitionMessageDiv.querySelector('.message-content');
+                                
+                                // 检查是否为默认回复，如果是则完全清除内容
+                                if (contentDiv.dataset.isDefaultResponse === 'true') {
+                                    console.log('检测到默认回复，将直接替换为服务器返回的认知分析结果');
+                                    // 移除默认回复标记
+                                    delete contentDiv.dataset.isDefaultResponse;
+                                }
+                                
                                 // 添加信件样式类
                                 contentDiv.classList.add('letter-style');
+                                // 完全清除内容，确保没有残留
+                                contentDiv.innerHTML = '';
                                 contentDiv.textContent = '';
+                                
                                 typeWriter(contentDiv, response.cognitive, 0, () => {
-                                    contentDiv.innerHTML = marked.parse(contentDiv.textContent);
+                                    try {
+                                        contentDiv.innerHTML = marked.parse(contentDiv.textContent);
+                                    } catch (e) {
+                                        console.error('Markdown解析出错:', e);
+                                        contentDiv.textContent = response.cognitive;
+                                    }
                                 });
                             } else {
                                 // 否则添加新消息
-                                await addMessage(response.cognitive, 'assistant');
+                                const messageDiv = document.createElement('div');
+                                messageDiv.className = 'message assistant';
+                                messageDiv.dataset.messageType = 'cognitive'; // 添加数据属性标识认知回复
+                                messageDiv.innerHTML = `<div class="message-content letter-style"></div>`;
+                                messagesContainer.appendChild(messageDiv);
+                                
+                                const contentDiv = messageDiv.querySelector('.message-content');
+                                typeWriter(contentDiv, response.cognitive, 0, () => {
+                                    try {
+                                        contentDiv.innerHTML = marked.parse(contentDiv.textContent);
+                                    } catch (e) {
+                                        console.error('Markdown解析出错:', e);
+                                        contentDiv.textContent = response.cognitive;
+                                    }
+                                });
                             }
                         }
                     }
                 }
+                
+                // 保存对话到历史记录
+                saveConversationToHistory();
 
             } catch (error) {
                 console.error('Error:', error);
@@ -583,7 +1113,32 @@
                 if (thinkingDiv && thinkingDiv.parentNode) {
                     messagesContainer.removeChild(thinkingDiv);
                 }
-                addMessage('抱歉，发生了错误，请稍后重试。', 'assistant');
+                
+                // 显示更具体的错误消息
+                let errorMessage = '抱歉，发生了错误，请稍后重试。';
+                if (error.message.includes('超时')) {
+                    errorMessage = '抱歉，服务器响应超时，请稍后重试。';
+                } else if (error.message.includes('网络')) {
+                    errorMessage = '抱歉，网络连接出现问题，请检查您的网络连接后重试。';
+                }
+                
+                addMessage(errorMessage, 'assistant');
+                
+                // 记录错误日志
+                try {
+                    fetch(`${window.location.origin}/api/log-error`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            error: error.message,
+                            stack: error.stack,
+                            sessionId: currentSessionId,
+                            timestamp: new Date().toISOString()
+                        })
+                    }).catch(err => console.error('记录错误日志时出错:', err));
+                } catch (e) {
+                    console.error('记录错误日志时出错:', e);
+                }
             }
         }
 
@@ -649,7 +1204,179 @@
                 }
             });
         }
-
+        
+        // 保存对话到历史记录
+        function saveConversationToHistory() {
+            // 获取当前对话内容
+            const messages = messagesContainer.querySelectorAll('.message');
+            if (messages.length <= 1) return; // 只有欢迎消息，不保存
+            
+            // 提取用户的第一条消息作为预览
+            let preview = "";
+            let userMessageFound = false;
+            
+            for (const msg of messages) {
+                if (msg.classList.contains('user') && !userMessageFound) {
+                    const content = msg.querySelector('.message-content').textContent.trim();
+                    preview = content.length > 50 ? content.substring(0, 50) + '...' : content;
+                    userMessageFound = true;
+                    break;
+                }
+            }
+            
+            if (!preview) return; // 没有找到用户消息，不保存
+            
+            // 创建历史记录对象
+            const conversation = {
+                id: currentSessionId,
+                timestamp: new Date().toISOString(),
+                preview: preview,
+                html: messagesContainer.innerHTML
+            };
+            
+            // 获取现有历史记录
+            let history = JSON.parse(localStorage.getItem('mailboxHistory') || '[]');
+            
+            // 检查是否已存在相同ID的对话，如果有则更新
+            const existingIndex = history.findIndex(item => item.id === conversation.id);
+            if (existingIndex !== -1) {
+                history[existingIndex] = conversation;
+            } else {
+                // 添加新对话到历史记录
+                history.unshift(conversation);
+            }
+            
+            // 保存到本地存储
+            localStorage.setItem('mailboxHistory', JSON.stringify(history));
+            
+            // 更新历史对话列表显示
+            updateMailboxList();
+        }
+        
+        // 更新历史对话列表显示
+        function updateMailboxList(searchTerm = '') {
+            // 清空现有列表
+            mailboxList.innerHTML = '';
+            
+            // 获取历史记录
+            let history = JSON.parse(localStorage.getItem('mailboxHistory') || '[]');
+            
+            // 如果有搜索词，进行过滤
+            if (searchTerm) {
+                const term = searchTerm.toLowerCase();
+                history = history.filter(item => 
+                    item.preview.toLowerCase().includes(term)
+                );
+            }
+            
+            // 如果没有历史记录
+            if (history.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.className = 'empty-mailbox';
+                emptyMsg.textContent = searchTerm ? '没有找到匹配的对话' : '信箱里还没有信件';
+                emptyMsg.style.padding = '20px';
+                emptyMsg.style.textAlign = 'center';
+                emptyMsg.style.color = '#718096';
+                mailboxList.appendChild(emptyMsg);
+                return;
+            }
+            
+            // 添加历史对话项
+            history.forEach(item => {
+                const mailItem = document.createElement('div');
+                mailItem.className = 'mail-item';
+                mailItem.dataset.id = item.id;
+                
+                // 格式化时间
+                const date = new Date(item.timestamp);
+                const formattedDate = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                
+                mailItem.innerHTML = `
+                    <div class="mail-time">${formattedDate}</div>
+                    <div class="mail-preview">${item.preview}</div>
+                    <button class="delete-mail" title="删除此对话">🗑️</button>
+                `;
+                
+                // 点击查看对话
+                mailItem.addEventListener('click', (e) => {
+                    // 如果点击的是删除按钮，不执行查看操作
+                    if (e.target.classList.contains('delete-mail')) return;
+                    
+                    // 加载对话
+                    loadConversation(item.id);
+                    
+                    // 关闭信箱
+                    mailboxContainer.classList.remove('active');
+                });
+                
+                // 删除按钮点击事件
+                const deleteBtn = mailItem.querySelector('.delete-mail');
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 阻止事件冒泡
+                    deleteConversation(item.id);
+                });
+                
+                mailboxList.appendChild(mailItem);
+            });
+        }
+        
+        // 加载对话
+        function loadConversation(id) {
+            // 获取历史记录
+            const history = JSON.parse(localStorage.getItem('mailboxHistory') || '[]');
+            const conversation = history.find(item => item.id === id);
+            
+            if (conversation) {
+                // 设置当前会话ID
+                currentSessionId = id;
+                
+                // 加载对话内容
+                messagesContainer.innerHTML = conversation.html;
+            }
+        }
+        
+        // 删除对话
+        function deleteConversation(id) {
+            // 获取历史记录
+            let history = JSON.parse(localStorage.getItem('mailboxHistory') || '[]');
+            
+            // 过滤掉要删除的对话
+            history = history.filter(item => item.id !== id);
+            
+            // 保存更新后的历史记录
+            localStorage.setItem('mailboxHistory', JSON.stringify(history));
+            
+            // 更新历史对话列表显示
+            updateMailboxList(mailSearch.value.trim());
+            
+            // 如果删除的是当前对话，创建新对话
+            if (id === currentSessionId) {
+                createNewConversation();
+            }
+        }
+        
+        // 创建新对话
+        function createNewConversation() {
+            // 生成新的会话ID
+            currentSessionId = generateSessionId();
+            
+            // 清空消息区域，只保留欢迎消息
+            messagesContainer.innerHTML = `
+                <div class="message assistant">
+                    <div class="message-content">
+                        🌙 深夜的杂货店亮着灯<br>
+                        你好，这里是浪矢爷爷的"解忧信箱"。<br>
+                        你可以写下任何心事——关于生活、选择、遗憾，或是某个难以启齿的秘密。<br>
+                        请相信："你的地图是白纸，所以一切皆有可能。"<br>
+                        我们会像对待30年前的信件一样，认真回复你的每一个字。
+                    </div>
+                </div>
+            `;
+            
+            // 清空输入框
+            userInput.value = '';
+        }
+        
         // 事件监听器
         sendButton.addEventListener('click', sendMessage);
         userInput.addEventListener('keypress', (e) => {
@@ -658,6 +1385,41 @@
                 sendMessage();
             }
         });
+        
+        // 信箱按钮点击事件
+        mailboxBtn.addEventListener('click', () => {
+            // 保存当前对话
+            saveConversationToHistory();
+            
+            // 更新历史对话列表
+            updateMailboxList();
+            
+            // 显示信箱
+            mailboxContainer.classList.add('active');
+        });
+        
+        // 关闭信箱按钮点击事件
+        closeMailbox.addEventListener('click', () => {
+            mailboxContainer.classList.remove('active');
+        });
+        
+        // 新信件按钮点击事件
+        newLetterBtn.addEventListener('click', () => {
+            // 保存当前对话
+            saveConversationToHistory();
+            
+            // 创建新对话
+            createNewConversation();
+        });
+        
+        // 搜索框输入事件
+        mailSearch.addEventListener('input', () => {
+            const searchTerm = mailSearch.value.trim();
+            updateMailboxList(searchTerm);
+        });
+        
+        // 初始化时更新历史对话列表
+        updateMailboxList();
     </script>
 </body>
 </html>

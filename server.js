@@ -35,19 +35,25 @@ const API_AUTH = {
 };
 
 // 添加请求超时和重试机制
-const MAX_RETRIES = 3;
-const TIMEOUT = 60000; // 增加到60秒超时，给API足够的响应时间
-const RETRY_DELAY = 500; // 降低到0.5秒重试延迟，加快重试速度
+const MAX_RETRIES = 5; // 增加最大重试次数
+const TIMEOUT = 60000; // 60秒超时，给API足够的响应时间
+const RETRY_DELAY = 1000; // 初始重试延迟1秒，使用指数退避策略
+const MAX_RETRY_DELAY = 10000; // 最大重试延迟10秒
 
 // 生成AI回复的函数
 async function generateResponse(message, instruction) {
     let retries = 0;
+    let lastError = null;
+    
     while (retries < MAX_RETRIES) {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
+            const timeoutId = setTimeout(() => {
+                controller.abort();
+                console.log(`请求超时 (${TIMEOUT}ms)，正在中止...`);
+            }, TIMEOUT);
 
-            console.log('Sending request to API:', {
+            console.log(`发送API请求 (尝试 ${retries + 1}/${MAX_RETRIES}):`, {
                 url: API_URL,
                 model: API_MODEL,
                 message: message.substring(0, 100) + '...' // 只记录消息的前100个字符
@@ -74,42 +80,76 @@ async function generateResponse(message, instruction) {
 
             clearTimeout(timeoutId);
 
+            // 检查HTTP状态码
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('API Response Error:', {
-                    status: response.status,
+                const statusCode = response.status;
+                
+                console.error('API响应错误:', {
+                    status: statusCode,
                     statusText: response.statusText,
                     errorText: errorText
                 });
-                throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+                
+                // 根据状态码决定是否重试
+                // 对于服务器错误(5xx)和部分客户端错误(429-太多请求)进行重试
+                // 对于其他客户端错误(4xx)不重试
+                if (statusCode < 500 && statusCode !== 429) {
+                    return `抱歉，请求出现错误 (${statusCode})，请检查您的输入后重试。`;
+                }
+                
+                throw new Error(`API请求失败，状态码: ${statusCode}, 错误信息: ${errorText}`);
             }
 
-            const data = await response.json();
-            console.log('API Response:', JSON.stringify(data, null, 2));
+            // 解析JSON响应
+            let data;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                console.error('解析API响应JSON时出错:', jsonError);
+                throw new Error('无法解析API响应');
+            }
+            
+            console.log('API响应成功:', JSON.stringify(data, null, 2));
 
+            // 验证响应结构
             if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
-                console.error('Invalid API response structure:', data);
-                throw new Error('Invalid API response structure');
+                console.error('API响应结构无效:', data);
+                throw new Error('API响应结构无效');
             }
 
+            // 成功获取响应
             return data.choices[0].message.content;
 
         } catch (error) {
-            console.error(`Error generating response (attempt ${retries + 1}/${MAX_RETRIES}):`, {
+            lastError = error;
+            console.error(`生成响应时出错 (尝试 ${retries + 1}/${MAX_RETRIES}):`, {
                 error: error.message,
                 stack: error.stack
             });
+            
             retries++;
-            if (retries === MAX_RETRIES) {
-                return '抱歉，生成回复时出现错误，请稍后再试。';
+            
+            // 达到最大重试次数
+            if (retries >= MAX_RETRIES) {
+                console.error(`达到最大重试次数 (${MAX_RETRIES})，停止重试`);
+                break;
             }
-            // 等待一段时间后重试
-            const delay = RETRY_DELAY * Math.pow(2, retries - 1); // 指数退避策略
-            console.log(`Waiting ${delay}ms before retry...`);
+            
+            // 计算退避延迟，但设置上限
+            const delay = Math.min(
+                RETRY_DELAY * Math.pow(2, retries - 1), 
+                MAX_RETRY_DELAY
+            );
+            
+            console.log(`等待 ${delay}ms 后重试...`);
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
-    return '抱歉，服务暂时不可用，请稍后再试。'
+    
+    // 所有重试都失败
+    console.error('所有重试尝试均失败:', lastError);
+    return '抱歉，服务暂时不可用，请稍后再试。我们已记录此问题并会尽快修复。';
 }
 
 // API路由 - 改为流式响应
@@ -140,7 +180,10 @@ app.post('/api/chat', async (req, res) => {
         
         // 设置更短的超时时间，确保在Vercel的限制内完成
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 20000); // 20秒超时，确保在Vercel限制内
+        const timeoutId = setTimeout(() => {
+            controller.abort();
+            console.log(`API请求超时 (20秒)，正在中止...`);
+        }, 20000); // 20秒超时，确保在Vercel限制内
         
         try {
             // 只获取情感回应，减少响应时间
@@ -172,16 +215,27 @@ app.post('/api/chat', async (req, res) => {
                     // 改进提示词，使认知回复更有价值，并添加第四段内容
                     const cognitiveResponse = await generateResponse(message, '请对用户的消息进行深入分析，理解他们的情感状态和潜在需求。以浪矢爷爷的身份，用温暖和智慧的语气回复，像一个值得信赖的长者一样倾听他们的烦恼。\n\n请提供以下四个部分的回复：\n1. 对用户情况的理解和共情\n2. 对问题本质的分析\n3. 实用的建议和鼓励\n4. 一段温暖的结语\n\n以信件格式书写，开头称呼"亲爱的朋友"，结尾落款"浪矢爷爷"');
                     console.log('后台生成的认知回应:', cognitiveResponse);
-                    // 将认知分析存储到Map中，使用会话ID作为键
-                    cognitiveResponsesMap.set(sessionId, cognitiveResponse);
-                    console.log('已存储认知分析，当前Map大小:', cognitiveResponsesMap.size);
-                    console.log('存储的会话ID:', sessionId);
-                    // 设置过期时间，1小时后自动删除
-                    setTimeout(() => {
-                        cognitiveResponsesMap.delete(sessionId);
-                    }, 3600000);
+                    
+                    // 验证认知回应是否有效
+                    if (cognitiveResponse && typeof cognitiveResponse === 'string' && cognitiveResponse.length > 50) {
+                        // 将认知分析存储到Map中，使用会话ID作为键
+                        cognitiveResponsesMap.set(sessionId, cognitiveResponse);
+                        console.log('已存储认知分析，当前Map大小:', cognitiveResponsesMap.size);
+                        console.log('存储的会话ID:', sessionId);
+                        // 设置过期时间，1小时后自动删除
+                        setTimeout(() => {
+                            cognitiveResponsesMap.delete(sessionId);
+                            console.log(`会话ID ${sessionId} 的认知分析已过期并删除`);
+                        }, 3600000);
+                    } else {
+                        console.error('生成的认知回应无效或太短:', cognitiveResponse);
+                        // 存储一个友好的错误消息
+                        cognitiveResponsesMap.set(sessionId, '亲爱的朋友，\n\n感谢你的来信。我正在思考如何更好地回应你的问题，但似乎我需要更多时间来整理思绪。请稍后再来查看我的回信，或者你可以再次表达你的想法，帮助我更好地理解你的处境。\n\n期待再次收到你的来信，\n浪矢爷爷');
+                    }
                 } catch (error) {
                     console.error('生成认知回应时出错:', error);
+                    // 存储一个友好的错误消息
+                    cognitiveResponsesMap.set(sessionId, '亲爱的朋友，\n\n感谢你的来信。我在思考回复时遇到了一些困难，可能是因为我对你的情况理解不够深入。如果方便的话，请再多告诉我一些关于你的情况，这样我才能给你更好的建议。\n\n期待你的回信，\n浪矢爷爷');
                 }
             }, 100); // 延迟100ms开始处理，确保主响应已经返回
         } catch (error) {
@@ -230,12 +284,25 @@ app.post('/api/check-cognitive', (req, res) => {
         const cognitiveResponse = cognitiveResponsesMap.get(sessionId);
         console.log('查找到的认知分析:', cognitiveResponse ? '已找到' : '未找到');
 
-        // 返回认知分析（如果已生成）
+        // 验证认知分析内容
+        let responseToSend = cognitiveResponse;
+        // 如果认知分析不存在或无效，返回null，让客户端继续轮询
+        // 只有在确认认知分析已生成但内容无效时才返回默认回复
+        if (!responseToSend) {
+            console.log('认知分析尚未生成，返回null让客户端继续轮询');
+            responseToSend = null;
+        } else if (typeof responseToSend !== 'string' || responseToSend.length < 50) {
+            console.log('认知分析内容无效或太短，使用默认回复');
+            responseToSend = '亲爱的朋友，\n\n感谢你的来信。我正在思考如何更好地回应你的问题，但似乎我需要更多时间来整理思绪。请稍后再来查看我的回信，或者你可以再次表达你的想法，帮助我更好地理解你的处境。\n\n期待再次收到你的来信，\n浪矢爷爷';
+        }
+
+        // 返回认知分析
         res.json({
-            cognitive: cognitiveResponse || '唉，这件事确实很难办呢，不过没关系，我给你写一封回信慢慢说吧'
+            cognitive: responseToSend
         });
+        
         // 记录返回的认知分析内容
-        console.log('返回的认知分析:', cognitiveResponse ? cognitiveResponse.substring(0, 50) + '...' : '使用默认值');
+        console.log('返回的认知分析:', responseToSend.substring(0, 50) + '...');
     } catch (error) {
         console.error('Error in check-cognitive endpoint:', {
             error: error.message,
