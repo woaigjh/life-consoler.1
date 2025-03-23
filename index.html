@@ -665,12 +665,7 @@
                 
                 try {
                     // 发送请求检查认知分析是否已生成
-                    // 修复API URL构建，确保在Vercel环境中也能正确工作
-                    let baseUrl = window.location.origin;
-                    // 检查是否在Vercel环境中，确保URL正确
-                    if (baseUrl.includes('vercel.app')) {
-                        console.log('检测到Vercel环境，使用完整URL路径');
-                    }
+                    const baseUrl = window.location.origin;
                     const apiUrl = `${baseUrl}/api/check-cognitive`;
                     console.log(`检查认知分析请求 (尝试 ${attempts + 1}/${maxAttempts}):`, {
                         url: apiUrl,
@@ -976,12 +971,7 @@
 
             try {
                 // 发送请求到后端
-                // 修复API URL构建，确保在Vercel环境中也能正确工作
-                let baseUrl = window.location.origin;
-                // 检查是否在Vercel环境中，确保URL正确
-                if (baseUrl.includes('vercel.app')) {
-                    console.log('检测到Vercel环境，使用完整URL路径');
-                }
+                const baseUrl = window.location.origin;
                 const apiUrl = `${baseUrl}/api/chat`;
                 console.log('发送聊天请求URL:', apiUrl);
                 
@@ -1171,6 +1161,8 @@
                     errorMessage = '抱歉，服务器网关超时，可能是因为请求处理时间过长，请稍后重试。';
                 }
                 
+                addMessage(errorMessage, 'assistant');
+                
                 // 对于短消息，提供更友好的提示
                 const message = userInput.value.trim();
                 if (message && message.length < 3) {
@@ -1184,6 +1176,7 @@
                     message: message,
                     errorType: error.name,
                     errorMessage: error.message,
+                    status: error.message.match(/\d{3}/) ? error.message.match(/\d{3}/)[0] : 'unknown',
                     timestamp: new Date().toISOString()
                 });
                 
@@ -1195,6 +1188,8 @@
                         body: JSON.stringify({ 
                             error: error.message,
                             stack: error.stack,
+                            userMessage: message,
+                            messageLength: message.length,
                             sessionId: currentSessionId,
                             timestamp: new Date().toISOString()
                         })
